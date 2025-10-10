@@ -1,0 +1,234 @@
+import React, { useState, useEffect } from 'react'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Layout, Menu, Button, Avatar, Dropdown, message } from 'antd'
+import { 
+  DashboardOutlined, 
+  ProjectOutlined, 
+  TagsOutlined, 
+  UserOutlined, 
+  LogoutOutlined,
+  SettingOutlined,
+  AreaChartOutlined,
+  TeamOutlined,
+  BankOutlined
+} from '@ant-design/icons'
+import { getProfile } from '../services/auth'
+
+const { Header, Sider, Content } = Layout
+
+const AppLayout = ({ onLogout, userInfo }) => {
+  const [collapsed, setCollapsed] = useState(false)
+  const [localUserInfo, setLocalUserInfo] = useState(userInfo || {})
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  // 使用传入的userInfo作为主要数据源，确保权限判断的准确性
+  const currentUser = userInfo || localUserInfo
+
+  useEffect(() => {
+    if (userInfo) {
+      setLocalUserInfo(userInfo)
+    } else {
+      fetchUserInfo()
+    }
+    
+    // 监听用户信息更新事件
+    const handleUserProfileUpdate = (event) => {
+      if (event.detail) {
+        setLocalUserInfo(event.detail)
+      } else {
+        // 如果没有详细信息，重新获取
+        fetchUserInfo()
+      }
+    }
+    
+    window.addEventListener('userProfileUpdated', handleUserProfileUpdate)
+    
+    return () => {
+      window.removeEventListener('userProfileUpdated', handleUserProfileUpdate)
+    }
+  }, [userInfo])
+
+  // 单独监听userInfo变化，确保及时更新本地状态
+  useEffect(() => {
+    if (userInfo && userInfo.username) {
+      setLocalUserInfo(userInfo)
+    }
+  }, [userInfo])
+
+  const fetchUserInfo = async () => {
+    try {
+      const response = await getProfile()
+      if (response.code === 200) {
+        setLocalUserInfo(response.data)
+      }
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+    }
+  }
+
+  const menuItems = [
+    {
+      key: '/',
+      icon: <DashboardOutlined />,
+      label: '仪表盘',
+    },
+    {
+      key: '/projects',
+      icon: <ProjectOutlined />,
+      label: '随风而逝',
+    },
+    {
+      key: '/assets',
+      icon: <BankOutlined />,
+      label: '恒产生金',
+    },
+    {
+      key: '/categories',
+      icon: <TagsOutlined />,
+      label: '分类管理',
+    },
+    {
+      key: '/analytics',
+      icon: <AreaChartOutlined />,
+      label: 'BI 分析',
+    },
+    ...(currentUser?.role === 'admin' ? [{
+      key: '/users',
+      icon: <TeamOutlined />,
+      label: '用户管理',
+    }] : [])
+  ]
+
+  const userMenuItems = [
+    {
+      key: 'profile',
+      icon: <SettingOutlined />,
+      label: '个人设置',
+      onClick: () => navigate('/profile'),
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: '退出登录',
+      onClick: onLogout,
+    },
+  ]
+
+  const handleMenuClick = ({ key }) => {
+    navigate(key)
+  }
+
+  const handleUserMenuClick = ({ key }) => {
+    if (key === 'profile') {
+      navigate('/profile')
+    } else if (key === 'logout') {
+      onLogout()
+    }
+  }
+
+  return (
+    <Layout style={{ minHeight: '100vh' }}>
+      <Sider 
+        trigger={null} 
+        collapsible 
+        collapsed={collapsed}
+        style={{
+          background: '#fff',
+          boxShadow: '2px 0 8px rgba(0,0,0,0.15)'
+        }}
+      >
+        <div style={{ 
+          height: '64px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          borderBottom: '1px solid #f0f0f0',
+          flexDirection: 'column'
+        }}>
+          {!collapsed && (
+            <>
+              <h2 style={{ margin: '4px 0 0 0', color: '#1890ff', fontSize: '16px' }}>时间价值</h2>
+              <div style={{ fontSize: '10px', color: '#999', lineHeight: '1' }}>
+                by 孚普科技
+              </div>
+            </>
+          )}
+        </div>
+        <Menu
+          theme="light"
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          items={menuItems}
+          onClick={handleMenuClick}
+          style={{ borderRight: 0 }}
+        />
+      </Sider>
+      
+      <Layout>
+        <Header style={{ 
+          padding: '0 24px', 
+          background: '#fff', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        }}>
+          <Button
+            type="text"
+            onClick={() => setCollapsed(!collapsed)}
+            style={{ fontSize: '16px', width: '64px', height: '64px' }}
+          >
+            {collapsed ? '☰' : '✕'}
+          </Button>
+          
+          <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenuClick }} placement="bottomRight">
+            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <Avatar icon={<UserOutlined />} style={{ marginRight: '8px' }} />
+              <span>{currentUser.username || '用户'}</span>
+              {currentUser.role === 'admin' && (
+                <span style={{ marginLeft: '8px', fontSize: '12px', color: '#faad14' }}>
+                  [管理员]
+                </span>
+              )}
+            </div>
+          </Dropdown>
+        </Header>
+        
+        <Content style={{ 
+          margin: '24px', 
+          padding: '24px', 
+          background: '#fff',
+          borderRadius: '8px',
+          minHeight: 'calc(100vh - 160px)'
+        }}>
+          <Outlet />
+        </Content>
+        
+        {/* 底部版权信息 */}
+        <div style={{
+          textAlign: 'center',
+          padding: '16px 24px',
+          borderTop: '1px solid #f0f0f0',
+          backgroundColor: '#fafafa',
+          color: '#666',
+          fontSize: '12px'
+        }}>
+          <div>
+            © 2024 TimeValue - 个人资产管理系统
+          </div>
+          <div style={{ marginTop: '4px' }}>
+            🚀 Powered by 孚普科技（北京）有限公司 | 
+            🤖 AI驱动的MVP快速迭代解决方案 | 
+            🌐 <a href="https://fupukeji.com" target="_blank" rel="noopener noreferrer">了解更多AI产品</a>
+          </div>
+        </div>
+      </Layout>
+    </Layout>
+  )
+}
+
+export default AppLayout

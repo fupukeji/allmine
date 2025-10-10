@@ -1,0 +1,40 @@
+{
+  "name": "timevalue-frontend",
+  "description": "TimeValue 个人资产管理系统 - 恒产生金",
+  "version": "1.0.0",
+  "author": "孚普科技（北京）有限公司",
+  "homepage": "https://fupukeji.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fupukeji/timevalue"
+  },
+  "keywords": ["asset-management", "finance", "mvp", "ai-generated", "fupukeji"],
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "antd": "^5.12.8",
+    "axios": "^1.6.0",
+    "react-router-dom": "^6.20.0",
+    "dayjs": "^1.11.10",
+    "@ant-design/icons": "^5.2.6",
+    "recharts": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.1.1",
+    "eslint": "^8.53.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.4",
+    "vite": "^5.0.0"
+  }
+}
