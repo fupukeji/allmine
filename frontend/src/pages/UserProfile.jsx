@@ -16,7 +16,9 @@ import {
   Switch,
   Select,
   TimePicker,
-  Radio
+  Radio,
+  Modal,
+  Alert
 } from 'antd'
 import {
   UserOutlined,
@@ -28,9 +30,12 @@ import {
   CameraOutlined,
   SaveOutlined,
   EyeInvisibleOutlined,
-  EyeTwoTone
+  EyeTwoTone,
+  ExclamationCircleOutlined,
+  DeleteOutlined
 } from '@ant-design/icons'
 import { getUserProfile, updateUserProfile, changePassword } from '../services/profile'
+import request from '../utils/request'
 import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
@@ -40,10 +45,13 @@ const UserProfile = () => {
   const [profileForm] = Form.useForm()
   const [preferencesForm] = Form.useForm()
   const [passwordForm] = Form.useForm()
+  const [resetForm] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
   const [userInfo, setUserInfo] = useState({})
   const [avatar, setAvatar] = useState('')
+  const [resetModalVisible, setResetModalVisible] = useState(false)
 
   useEffect(() => {
     fetchUserProfile()
@@ -177,6 +185,38 @@ const UserProfile = () => {
     } finally {
       setPasswordLoading(false)
     }
+  }
+
+  const handleResetDatabase = async () => {
+    try {
+      setResetLoading(true)
+      const values = await resetForm.validateFields()
+      
+      const response = await request.post('/auth/reset-database', {
+        password: values.password
+      })
+      
+      if (response.success) {
+        message.success('数据库清空成功，页面将刷新')
+        resetForm.resetFields()
+        setResetModalVisible(false)
+        // 1秒后刷新页面
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
+      } else {
+        message.error(response.message || '清空失败')
+      }
+    } catch (error) {
+      console.error('清空数据库失败:', error)
+      message.error(error.response?.data?.message || '清空失败')
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
+  const showResetConfirm = () => {
+    setResetModalVisible(true)
   }
 
   const beforeUpload = (file) => {
@@ -560,9 +600,107 @@ const UserProfile = () => {
                   </Button>
                 </Form.Item>
               </Form>
+
+              <Divider />
+
+              {/* 清空数据库 */}
+              <div style={{ marginTop: 24 }}>
+                <Alert
+                  message="危险操作"
+                  description="清空数据库将删除所有资产、项目、分类等数据，仅保留用户信息。此操作不可恢复，请谨慎操作！"
+                  type="error"
+                  showIcon
+                  style={{ marginBottom: 16 }}
+                />
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={showResetConfirm}
+                >
+                  清空数据库
+                </Button>
+              </div>
             </Card>
           </Col>
         </Row>
+
+        {/* 清空数据库确认弹窗 */}
+        <Modal
+          title={
+            <Space>
+              <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
+              确认清空数据库
+            </Space>
+          }
+          visible={resetModalVisible}
+          onCancel={() => {
+            setResetModalVisible(false)
+            resetForm.resetFields()
+          }}
+          footer={null}
+          width={500}
+        >
+          <Alert
+            message="警告：此操作将永久删除以下数据"
+            description={
+              <ul style={{ marginTop: 8, paddingLeft: 20 }}>
+                <li>所有固定资产记录</li>
+                <li>所有项目记录（随风而逝）</li>
+                <li>所有资产分类</li>
+                <li>所有收入记录</li>
+                <li>所有维护记录</li>
+                <li>所有AI报告</li>
+                <li>智谱AI API Key配置</li>
+              </ul>
+            }
+            type="error"
+            showIcon
+            style={{ marginBottom: 24 }}
+          />
+
+          <Form
+            form={resetForm}
+            layout="vertical"
+            onFinish={handleResetDatabase}
+          >
+            <Form.Item
+              label="请输入您的登录密码以确认此操作"
+              name="password"
+              rules={[
+                { required: true, message: '请输入登录密码' }
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder="请输入当前登录密码"
+                size="large"
+                iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+              />
+            </Form.Item>
+
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+                <Button 
+                  onClick={() => {
+                    setResetModalVisible(false)
+                    resetForm.resetFields()
+                  }}
+                >
+                  取消
+                </Button>
+                <Button
+                  type="primary"
+                  danger
+                  htmlType="submit"
+                  loading={resetLoading}
+                  icon={<DeleteOutlined />}
+                >
+                  确认清空
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Modal>
       </div>
     </div>
   )

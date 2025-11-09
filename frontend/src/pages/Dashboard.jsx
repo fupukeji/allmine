@@ -1,18 +1,27 @@
 import React, { useState, useEffect } from 'react'
-import { Row, Col, Card, Statistic, Table, Progress, Tag, Typography, Empty } from 'antd'
+import { Row, Col, Card, Statistic, Table, Progress, Tag, Typography, Empty, Divider, Tabs } from 'antd'
 import { 
   DollarOutlined, 
   ProjectOutlined, 
   TrophyOutlined, 
-  ClockCircleOutlined 
+  ClockCircleOutlined,
+  AppstoreOutlined,
+  ShoppingOutlined,
+  RiseOutlined,
+  FallOutlined,
+  PercentageOutlined,
+  WarningOutlined
 } from '@ant-design/icons'
 import { getProjects, getStatistics } from '../services/projects'
+import { getAssetsStatistics } from '../services/assets'
 import dayjs from 'dayjs'
 
 const { Title } = Typography
+const { TabPane } = Tabs
 
 const Dashboard = () => {
-  const [statistics, setStatistics] = useState({})
+  const [virtualStats, setVirtualStats] = useState({})
+  const [fixedStats, setFixedStats] = useState({})
   const [recentProjects, setRecentProjects] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -23,13 +32,18 @@ const Dashboard = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [statsResponse, projectsResponse] = await Promise.all([
+      const [projectStatsResponse, assetStatsResponse, projectsResponse] = await Promise.all([
         getStatistics(),
+        getAssetsStatistics(),
         getProjects({ sort_by: 'created_at', order: 'desc' })
       ])
 
-      if (statsResponse.code === 200) {
-        setStatistics(statsResponse.data)
+      if (projectStatsResponse.code === 200) {
+        setVirtualStats(projectStatsResponse.data)
+      }
+
+      if (assetStatsResponse.code === 200) {
+        setFixedStats(assetStatsResponse.data)
       }
 
       if (projectsResponse.code === 200) {
@@ -106,103 +120,224 @@ const Dashboard = () => {
     <div>
       <Title level={2}>仪表盘</Title>
       
-      {/* 统计卡片 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="项目总数"
-              value={statistics.total_projects || 0}
-              prefix={<ProjectOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
+      <Row gutter={16}>
+        {/* 左侧: 统计数据 */}
+        <Col xs={24} lg={10}>
+          {/* 虚拟资产（随风而逝） */}
+          <Card 
+            title={
+              <span>
+                <AppstoreOutlined style={{ marginRight: 8, color: '#ff6b6b' }} />
+                随风而逝
+              </span>
+            }
+            loading={loading}
+            size="small"
+            style={{ marginBottom: 16 }}
+          >
+            <Row gutter={[8, 8]}>
+              <Col span={12}>
+                <Statistic
+                  title="项目总数"
+                  value={virtualStats.total_projects || 0}
+                  prefix={<ProjectOutlined />}
+                  valueStyle={{ color: '#1890ff', fontSize: 18 }}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title="总投入"
+                  value={virtualStats.total_amount || 0}
+                  precision={2}
+                  suffix="元"
+                  valueStyle={{ color: '#52c41a', fontSize: 18 }}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title="已消耗"
+                  value={virtualStats.total_used_cost || 0}
+                  precision={2}
+                  suffix="元"
+                  valueStyle={{ color: '#faad14', fontSize: 18 }}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title="剩余价值"
+                  value={virtualStats.total_remaining_value || 0}
+                  precision={2}
+                  suffix="元"
+                  valueStyle={{ color: '#f5222d', fontSize: 18 }}
+                />
+              </Col>
+            </Row>
+            
+            <Divider style={{ margin: '12px 0' }} />
+            
+            {virtualStats.status_distribution && (
+              <Row gutter={8}>
+                <Col span={8}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 20, color: '#1890ff', fontWeight: 'bold' }}>
+                      {virtualStats.status_distribution.not_started || 0}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#999' }}>未开始</div>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 20, color: '#52c41a', fontWeight: 'bold' }}>
+                      {virtualStats.status_distribution.active || 0}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#999' }}>消耗中</div>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 20, color: '#f5222d', fontWeight: 'bold' }}>
+                      {virtualStats.status_distribution.expired || 0}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#999' }}>已过期</div>
+                  </div>
+                </Col>
+              </Row>
+            )}
+          </Card>
+
+          {/* 固定资产（恒产生金） */}
+          <Card 
+            title={
+              <span>
+                <ShoppingOutlined style={{ marginRight: 8, color: '#5c7cfa' }} />
+                恒产生金
+              </span>
+            }
+            loading={loading}
+            size="small"
+            style={{ marginBottom: 16 }}
+          >
+            <Row gutter={[8, 8]}>
+              <Col span={12}>
+                <Statistic
+                  title="资产总数"
+                  value={fixedStats.overview?.total_assets || 0}
+                  prefix={<ShoppingOutlined />}
+                  valueStyle={{ color: '#5c7cfa', fontSize: 18 }}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title="资产原值"
+                  value={fixedStats.overview?.total_original_value || 0}
+                  precision={2}
+                  suffix="元"
+                  valueStyle={{ color: '#52c41a', fontSize: 18 }}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title="当前总值"
+                  value={fixedStats.overview?.total_current_value || 0}
+                  precision={2}
+                  suffix="元"
+                  valueStyle={{ color: '#1890ff', fontSize: 18 }}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title="累计折旧"
+                  value={fixedStats.overview?.total_accumulated_depreciation || 0}
+                  precision={2}
+                  suffix="元"
+                  valueStyle={{ color: '#faad14', fontSize: 18 }}
+                />
+              </Col>
+            </Row>
+
+            <Divider style={{ margin: '12px 0' }} />
+
+            {fixedStats.status_distribution && fixedStats.status_distribution.length > 0 && (() => {
+              const statusMap = {}
+              fixedStats.status_distribution.forEach(item => {
+                statusMap[item.status] = item.count
+              })
+              return (
+                <Row gutter={8}>
+                  <Col span={6}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, color: '#52c41a', fontWeight: 'bold' }}>
+                        {statusMap.in_use || 0}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#999' }}>使用中</div>
+                    </div>
+                  </Col>
+                  <Col span={6}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, color: '#faad14', fontWeight: 'bold' }}>
+                        {statusMap.idle || 0}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#999' }}>闲置</div>
+                    </div>
+                  </Col>
+                  <Col span={6}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, color: '#1890ff', fontWeight: 'bold' }}>
+                        {statusMap.maintenance || 0}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#999' }}>维修中</div>
+                    </div>
+                  </Col>
+                  <Col span={6}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, color: '#8c8c8c', fontWeight: 'bold' }}>
+                        {statusMap.disposed || 0}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#999' }}>已处置</div>
+                    </div>
+                  </Col>
+                </Row>
+              )
+            })()}
+
+            {fixedStats.overview?.depreciation_rate !== undefined && (
+              <>
+                <Divider style={{ margin: '12px 0' }} />
+                <div>
+                  <div style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>整体折旧率</div>
+                  <Progress 
+                    percent={parseFloat(fixedStats.overview.depreciation_rate || 0)} 
+                    strokeColor={{
+                      '0%': '#52c41a',
+                      '50%': '#faad14',
+                      '100%': '#f5222d',
+                    }}
+                    format={percent => `${percent.toFixed(2)}%`}
+                  />
+                </div>
+              </>
+            )}
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="总投入金额"
-              value={statistics.total_amount || 0}
-              precision={2}
-              prefix={<DollarOutlined />}
-              suffix="元"
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="已消耗成本"
-              value={statistics.total_used_cost || 0}
-              precision={2}
-              prefix={<ClockCircleOutlined />}
-              suffix="元"
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="剩余价值"
-              value={statistics.total_remaining_value || 0}
-              precision={2}
-              prefix={<TrophyOutlined />}
-              suffix="元"
-              valueStyle={{ color: '#f5222d' }}
-            />
+
+        {/* 右侧: 最近项目明细 */}
+        <Col xs={24} lg={14}>
+          <Card title="最近虚拟资产项目" loading={loading} size="small">
+            {recentProjects.length === 0 ? (
+              <Empty description="暂无项目数据" />
+            ) : (
+              <Table
+                dataSource={recentProjects}
+                columns={columns}
+                rowKey="id"
+                pagination={false}
+                size="small"
+                scroll={{ y: 600 }}
+              />
+            )}
           </Card>
         </Col>
       </Row>
-
-      {/* 项目状态分布 */}
-      {statistics.status_distribution && (
-        <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-          <Col span={24}>
-            <Card title="项目状态分布">
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Statistic
-                    title="未开始"
-                    value={statistics.status_distribution.not_started || 0}
-                    valueStyle={{ color: '#1890ff' }}
-                  />
-                </Col>
-                <Col span={8}>
-                  <Statistic
-                    title="消耗中"
-                    value={statistics.status_distribution.active || 0}
-                    valueStyle={{ color: '#52c41a' }}
-                  />
-                </Col>
-                <Col span={8}>
-                  <Statistic
-                    title="已过期"
-                    value={statistics.status_distribution.expired || 0}
-                    valueStyle={{ color: '#f5222d' }}
-                  />
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-      {/* 最近项目 */}
-      <Card title="最近项目" loading={loading}>
-        {recentProjects.length === 0 ? (
-          <Empty description="暂无项目数据" />
-        ) : (
-          <Table
-            dataSource={recentProjects}
-            columns={columns}
-            rowKey="id"
-            pagination={false}
-            size="small"
-          />
-        )}
-      </Card>
     </div>
   )
 }

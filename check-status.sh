@@ -1,113 +1,129 @@
 #!/bin/bash
 
-# 项目完成状态检查脚本
+# TimeValue 系统状态检查脚本
+# Powered by 孚普科技（北京）有限公司
 
-echo "🚀 时间价值计算器 - 项目状态检查"
-echo "=================================="
+echo "================================================================"
+echo "🔍 TimeValue 个人资产管理系统 - 状态检查"
+echo "================================================================"
+echo ""
 
-# 检查项目结构
-echo "📁 检查项目结构..."
+# 获取当前脚本所在目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-# 后端文件检查
-backend_files=(
-    "backend/app.py"
-    "backend/requirements.txt"
-    "backend/Dockerfile"
-    "backend/models/user.py"
-    "backend/models/category.py"
-    "backend/models/project.py"
-    "backend/routes/auth.py"
-    "backend/routes/categories.py"
-    "backend/routes/projects.py"
-)
+# 检查服务运行状态
+echo "📊 服务运行状态:"
+echo "----------------"
 
-echo "后端文件："
-for file in "${backend_files[@]}"; do
-    if [ -f "$file" ]; then
-        echo "  ✅ $file"
+# 检查后端
+if [ -f "backend.pid" ]; then
+    PID=$(cat backend.pid)
+    if ps -p $PID > /dev/null 2>&1; then
+        echo "✅ 后端服务: 运行中 (PID: $PID)"
+        # 检查端口
+        if netstat -tuln 2>/dev/null | grep -q ":5000 " || ss -tuln 2>/dev/null | grep -q ":5000 "; then
+            echo "   └─ 端口 5000: 正常监听"
+        else
+            echo "   └─ 端口 5000: ⚠️ 未监听"
+        fi
     else
-        echo "  ❌ $file (缺失)"
+        echo "❌ 后端服务: 已停止 (进程不存在)"
     fi
-done
+else
+    echo "❌ 后端服务: 未运行 (无PID文件)"
+fi
 
-# 前端文件检查
-frontend_files=(
-    "frontend/package.json"
-    "frontend/vite.config.js"
-    "frontend/Dockerfile"
-    "frontend/src/App.jsx"
-    "frontend/src/pages/Login.jsx"
-    "frontend/src/pages/Register.jsx"
-    "frontend/src/pages/Dashboard.jsx"
-    "frontend/src/pages/Projects.jsx"
-    "frontend/src/pages/Categories.jsx"
-)
-
-echo -e "\n前端文件："
-for file in "${frontend_files[@]}"; do
-    if [ -f "$file" ]; then
-        echo "  ✅ $file"
+# 检查前端
+if [ -f "frontend.pid" ]; then
+    PID=$(cat frontend.pid)
+    if ps -p $PID > /dev/null 2>&1; then
+        echo "✅ 前端服务: 运行中 (PID: $PID)"
+        # 检查端口
+        if netstat -tuln 2>/dev/null | grep -q ":3000 " || ss -tuln 2>/dev/null | grep -q ":3000 "; then
+            echo "   └─ 端口 3000: 正常监听"
+        else
+            echo "   └─ 端口 3000: ⚠️ 未监听"
+        fi
     else
-        echo "  ❌ $file (缺失)"
+        echo "❌ 前端服务: 已停止 (进程不存在)"
     fi
-done
+else
+    echo "❌ 前端服务: 未运行 (无PID文件)"
+fi
 
-# 配置文件检查
-config_files=(
-    "docker-compose.yml"
-    "docs/api.md"
-    "docs/deployment.md"
-    "docs/user-manual.md"
-    "README.md"
-    "QUICKSTART.md"
-)
-
-echo -e "\n配置和文档文件："
-for file in "${config_files[@]}"; do
-    if [ -f "$file" ]; then
-        echo "  ✅ $file"
+echo ""
+echo "📁 数据目录状态:"
+echo "----------------"
+if [ -d "data" ]; then
+    echo "✅ 数据目录: 存在"
+    if [ -f "backend/timevalue.db" ] || [ -f "data/timevalue.db" ]; then
+        echo "✅ 数据库文件: 存在"
     else
-        echo "  ❌ $file (缺失)"
+        echo "⚠️  数据库文件: 未找到"
     fi
-done
+    if [ -d "data/backups" ]; then
+        BACKUP_COUNT=$(ls -1 data/backups/*.db 2>/dev/null | wc -l)
+        echo "✅ 备份目录: 存在 ($BACKUP_COUNT 个备份文件)"
+    else
+        echo "⚠️  备份目录: 不存在"
+    fi
+else
+    echo "❌ 数据目录: 不存在"
+fi
 
-echo -e "\n🎯 项目完成状态"
-echo "================"
-echo "✅ 后端API开发完成"
-echo "  - 用户认证系统"
-echo "  - 分类管理API"
-echo "  - 项目管理API"
-echo "  - 价值计算引擎"
 echo ""
-echo "✅ 前端界面开发完成"
-echo "  - React + Ant Design UI"
-echo "  - 用户登录注册"
-echo "  - 仪表盘统计"
-echo "  - 项目和分类管理"
-echo ""
-echo "✅ Docker部署配置完成"
-echo "  - 后端Dockerfile"
-echo "  - 前端Dockerfile"
-echo "  - docker-compose.yml"
-echo "  - Nginx配置"
-echo ""
-echo "✅ 文档编写完成"
-echo "  - API接口文档"
-echo "  - 部署指南"
-echo "  - 用户手册"
-echo "  - 快速启动指南"
+echo "📝 日志文件:"
+echo "----------------"
+if [ -d "logs" ]; then
+    if [ -f "logs/backend.log" ]; then
+        BACKEND_LOG_SIZE=$(du -h logs/backend.log | cut -f1)
+        echo "✅ 后端日志: logs/backend.log ($BACKEND_LOG_SIZE)"
+    else
+        echo "⚠️  后端日志: 未找到"
+    fi
+    if [ -f "logs/frontend.log" ]; then
+        FRONTEND_LOG_SIZE=$(du -h logs/frontend.log | cut -f1)
+        echo "✅ 前端日志: logs/frontend.log ($FRONTEND_LOG_SIZE)"
+    else
+        echo "⚠️  前端日志: 未找到"
+    fi
+else
+    echo "⚠️  日志目录: 不存在"
+fi
 
-echo -e "\n🚀 启动命令"
-echo "=========="
-echo "1. 使用Docker启动（推荐）："
-echo "   docker-compose up -d"
 echo ""
-echo "2. 访问地址："
-echo "   前端: http://localhost:3000"
-echo "   后端: http://localhost:5000"
-echo ""
-echo "3. 默认账号："
-echo "   用户名: admin"
-echo "   密码: admin123"
+echo "🌐 网络访问:"
+echo "----------------"
+echo "本地访问: http://localhost:3000"
+if command -v curl &> /dev/null; then
+    PUBLIC_IP=$(curl -s ifconfig.me || echo "无法获取")
+    echo "公网访问: http://$PUBLIC_IP:3000"
+else
+    echo "提示: 安装curl可显示公网IP"
+fi
 
-echo -e "\n✨ 项目开发完成！"
+echo ""
+echo "💻 系统资源:"
+echo "----------------"
+if command -v free &> /dev/null; then
+    MEM_TOTAL=$(free -h | awk '/^Mem:/{print $2}')
+    MEM_USED=$(free -h | awk '/^Mem:/{print $3}')
+    echo "内存使用: $MEM_USED / $MEM_TOTAL"
+fi
+if command -v df &> /dev/null; then
+    DISK_USAGE=$(df -h . | awk 'NR==2{print $5}')
+    echo "磁盘使用: $DISK_USAGE"
+fi
+
+echo ""
+echo "================================================================"
+echo "🚀 管理命令:"
+echo "  - 启动服务: ./start_production.sh"
+echo "  - 停止服务: ./stop_production.sh"
+echo "  - 查看日志: tail -f logs/backend.log 或 logs/frontend.log"
+echo "  - 重新部署: ./deploy.sh"
+echo "================================================================"
+echo "🏢 Powered by 孚普科技（北京）有限公司"
+echo "🌐 https://fupukeji.com"
+echo "================================================================"

@@ -1,6 +1,8 @@
 from database import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import base64
+import os
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -29,6 +31,9 @@ class User(db.Model):
     email_notifications = db.Column(db.Boolean, default=True)  # 邮件通知
     sms_notifications = db.Column(db.Boolean, default=False)  # 短信通知
     
+    # 智谱AI API配置（加密存储）
+    aliyun_api_token_encrypted = db.Column(db.Text)  # 加密后的智谱AI API Key
+    
     # 关联关系
     categories = db.relationship('Category', backref='user', lazy=True, cascade='all, delete-orphan')
     projects = db.relationship('Project', backref='user', lazy=True, cascade='all, delete-orphan')
@@ -53,6 +58,41 @@ class User(db.Model):
     def can_manage_users(self):
         """检查是否可以管理用户"""
         return self.is_admin()
+    
+    @staticmethod
+    def _get_encryption_key():
+        """获取加密密钥（从环境变量或生成）"""
+        key = os.getenv('ENCRYPTION_KEY')
+        if not key:
+            # 如果没有设置，使用默认密钥（生产环境应设置环境变量）
+            key = 'timevalue-default-encryption-key-2024'
+        # 确保密钥长度为32字节
+        return key.ljust(32)[:32].encode()
+    
+    def set_aliyun_api_token(self, token):
+        """加密并存储智谱AI API Key（使用base64编码）"""
+        if not token:
+            self.aliyun_api_token_encrypted = None
+            return
+        
+        try:
+            # 使用base64编码（简单且可靠）
+            self.aliyun_api_token_encrypted = base64.b64encode(token.encode()).decode()
+        except Exception as e:
+            print(f"Token编码失败: {str(e)}")
+            raise
+    
+    def get_aliyun_api_token(self):
+        """解密并返回智谱AI API Key"""
+        if not self.aliyun_api_token_encrypted:
+            return None
+        
+        try:
+            # base64解码
+            return base64.b64decode(self.aliyun_api_token_encrypted.encode()).decode()
+        except Exception as e:
+            print(f"Token解码失败: {str(e)}")
+            return None
     
     def to_dict(self):
         """转换为字典"""

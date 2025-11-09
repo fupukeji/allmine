@@ -11,13 +11,20 @@ import {
   Space,
   Tag,
   Row,
-  Col
+  Col,
+  Collapse,
+  Badge
 } from 'antd'
 import { 
   PlusOutlined, 
   EditOutlined, 
   DeleteOutlined,
-  FolderOutlined 
+  FolderOutlined,
+  AppstoreOutlined,
+  ShoppingOutlined,
+  BankOutlined,
+  CreditCardOutlined,
+  FileOutlined
 } from '@ant-design/icons'
 import { 
   getCategories, 
@@ -27,14 +34,82 @@ import {
 } from '../services/categories'
 
 const { Title } = Typography
+const { Panel } = Collapse
 
 const Categories = () => {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
-  const [selectedColor, setSelectedColor] = useState('#1890ff') // 新增颜色状态
+  const [selectedColor, setSelectedColor] = useState('#1890ff')
   const [form] = Form.useForm()
+
+  // 资产分组定义
+  const categoryGroups = {
+    virtual: {
+      title: '随风而逝（虚拟消耗型资产）',
+      icon: <AppstoreOutlined />,
+      color: '#ff6b6b',
+      keywords: ['视频', '音乐', '知识', '外卖', '电商', '出行', '云存储', 
+                 '游戏', '直播', '电子书', '课程', '软件', '会员', '充值', '道具', '礼物']
+    },
+    fixed: {
+      title: '恒产生金（固定资产）',
+      icon: <ShoppingOutlined />,
+      color: '#5c7cfa',
+      keywords: ['房产', '车辆', '车位', '车库', '珠宝', '首饰', '艺术', '收藏', 
+                 '名包', '名表', '电脑', '手机', '数码', '摄影', '器材', 
+                 '家电', '家具', '智能家居']
+    },
+    financial: {
+      title: '金融流动资产',
+      icon: <BankOutlined />,
+      color: '#51cf66',
+      keywords: ['银行', '存款', '现金', '支付宝', '微信', '股票', '基金', 
+                 '债券', '理财', '数字货币', '比特币', '保险', '社保', '公积金']
+    },
+    liability: {
+      title: '负债管理',
+      icon: <CreditCardOutlined />,
+      color: '#fa5252',
+      keywords: ['房贷', '车贷', '信用卡', '消费贷', '花呗', '白条', '借呗', 
+                 '经营贷款', '私人借款', '借款']
+    },
+    other: {
+      title: '其他资产',
+      icon: <FileOutlined />,
+      color: '#868e96',
+      keywords: ['应收', '预付', '积分', '权益', '其他']
+    }
+  }
+
+  // 根据分类名称判断所属组
+  const getCategoryGroup = (categoryName) => {
+    for (const [groupKey, groupConfig] of Object.entries(categoryGroups)) {
+      if (groupConfig.keywords.some(keyword => categoryName.includes(keyword))) {
+        return groupKey
+      }
+    }
+    return 'other'
+  }
+
+  // 分组分类
+  const groupedCategories = React.useMemo(() => {
+    const grouped = {
+      virtual: [],
+      fixed: [],
+      financial: [],
+      liability: [],
+      other: []
+    }
+    
+    categories.forEach(category => {
+      const group = getCategoryGroup(category.name)
+      grouped[group].push(category)
+    })
+    
+    return grouped
+  }, [categories])
 
   useEffect(() => {
     fetchCategories()
@@ -206,17 +281,38 @@ const Categories = () => {
         </Col>
       </Row>
 
-      <Table
-        dataSource={categories}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-        }}
-      />
+      {/* 分组展示 */}
+      <Collapse 
+        defaultActiveKey={['virtual', 'fixed', 'financial', 'liability', 'other']}
+        style={{ marginBottom: 24 }}
+      >
+        {Object.entries(categoryGroups).map(([groupKey, groupConfig]) => {
+          const groupData = groupedCategories[groupKey] || []
+          return (
+            <Panel
+              key={groupKey}
+              header={
+                <Space>
+                  {groupConfig.icon}
+                  <span style={{ fontWeight: 'bold', color: groupConfig.color }}>
+                    {groupConfig.title}
+                  </span>
+                  <Badge count={groupData.length} style={{ backgroundColor: groupConfig.color }} />
+                </Space>
+              }
+            >
+              <Table
+                dataSource={groupData}
+                columns={columns}
+                rowKey="id"
+                loading={loading}
+                pagination={false}
+                size="small"
+              />
+            </Panel>
+          )
+        })}
+      </Collapse>
 
       <Modal
         title={editingCategory ? '编辑分类' : '添加分类'}

@@ -1,63 +1,145 @@
 # TimeValue 快速开始指南
 
+🚀 **Powered by 孚普科技（北京）有限公司**  
+🤖 **AI驱动的MVP快速迭代解决方案**
+
+---
+
 ## 系统要求
 
-- **操作系统**: Linux (Ubuntu 18.04+, CentOS 7+, Debian 9+)
-- **Python**: 3.6 或更高版本
-- **Node.js**: 14.0 或更高版本
-- **内存**: 至少 2GB RAM
-- **磁盘空间**: 至少 1GB 可用空间
+- **操作系统**: 
+  - Linux (Ubuntu 18.04+, CentOS 7+, Debian 9+, Alibaba Cloud Linux)
+  - Windows 10/11 (开发环境)
+- **Python**: 3.8 或更高版本（推荐 3.11+）
+- **Node.js**: 16.0 或更高版本（推荐 18.x LTS）
+- **内存**: 至少 2GB RAM（推荐 4GB+）
+- **磁盘空间**: 至少 2GB 可用空间
 
-## 一键部署（推荐）
+---
 
-### 1. 下载项目
+## 阿里云ECS一键部署（推荐）
+
+### 准备工作
+
+1. **购买阿里云ECS实例**
+   - 推荐配置：2核4GB及以上
+   - 操作系统：Alibaba Cloud Linux 3 或 Ubuntu 20.04+
+   - 带宽：5Mbps及以上
+
+2. **配置安全组**
+   - 开放端口：80 (HTTP)、443 (HTTPS)、3000 (前端)、5000 (后端)
+   - 如果只使用Nginx代理，只需开放80和443
+
+### 快速部署步骤
+
+#### 1. 连接到ECS服务器
+```bash
+ssh root@<你的ECS公网IP>
+```
+
+#### 2. 下载项目
 ```bash
 # 如果是git仓库
 git clone <repository-url>
-cd TimeValue
+cd timevalue
 
-# 或者直接解压项目文件到目录
+# 或者使用wget/scp上传项目文件
 ```
 
-### 2. 运行部署脚本
+#### 3. 一键部署
 ```bash
 chmod +x deploy.sh
 ./deploy.sh
 ```
 
-脚本会自动完成以下操作：
-- 检查系统要求
-- 安装Python和Node.js依赖
-- 创建虚拟环境
-- 构建前端项目
-- 初始化数据库
-- 创建启动脚本
-- 可选创建系统服务
+**脚本会自动完成：**
+- ✅ 检测操作系统类型（Ubuntu/CentOS/Alibaba Cloud Linux）
+- ✅ 自动安装Python3和Node.js（如果未安装）
+- ✅ 创建数据持久化目录
+- ✅ 生成安全密钥
+- ✅ 安装后端和前端依赖
 
-### 3. 启动服务
-
-**开发模式（推荐用于测试）：**
+#### 4. 配置Nginx权限（首次部署必需）
 ```bash
-# 启动后端（新终端窗口）
-./start_backend.sh
-
-# 启动前端（新终端窗口）
-./start_frontend_dev.sh
+sudo bash setup_nginx_permissions.sh
 ```
 
-**生产模式：**
+**此脚本会自动：**
+- ✅ 创建Nginx配置目录
+- ✅ 配置应用用户权限
+- ✅ 设置sudo权限（允许Web界面管理Nginx）
+- ✅ 安装Nginx（如果未安装）
+- ✅ 启动Nginx服务
+
+⚠️ **重要**：配置完成后需要重新登录才能使权限生效：
 ```bash
-# 一键启动所有服务
+exit
+su - your_username
+cd /path/to/timevalue
+```
+
+#### 5. 启动生产服务
+```bash
+chmod +x start_production.sh
 ./start_production.sh
+```
+
+#### 6. 访问应用
+- **本地访问**: http://localhost:3000
+- **公网访问**: http://<你的ECS公网IP>:3000
+- **默认管理员**: admin / admin123
+
+#### 7. 配置Nginx（通过Web界面）
+1. 使用管理员账号登录（admin/admin123）
+2. 点击左侧菜单 **"Nginx配置"**
+3. 创建新的Nginx配置：
+   - 设置域名（或使用 `_` 接受所有请求）
+   - 配置SSL证书路径（如果有）
+   - 调整端口和代理规则
+4. 预览配置确认无误
+5. 点击 **"应用"** 激活配置
+
+📖 详细说明请参考：[NGINX_CONFIG_GUIDE.md](NGINX_CONFIG_GUIDE.md)
+
+### 服务管理命令
+
+```bash
+# 查看服务状态
+./check-status.sh
 
 # 停止所有服务
 ./stop_production.sh
+
+# 查看日志
+tail -f logs/backend.log
+tail -f logs/frontend.log
+```
+
+---
+
+## Windows本地开发
+
+### 1. 安装依赖
+- 安装 [Python 3.8+](https://www.python.org/downloads/)
+- 安装 [Node.js 16+](https://nodejs.org/)
+
+### 2. 启动后端
+双击运行 `start_backend.bat` 或在命令行执行：
+```cmd
+start_backend.bat
+```
+
+### 3. 启动前端
+打开新的命令行窗口：
+```cmd
+cd frontend
+npm install
+npm run dev
 ```
 
 ### 4. 访问应用
-- 前端地址：http://localhost:3000
+- 前端：http://localhost:3000
 - 后端API：http://localhost:5000
-- 默认管理员账号：admin / admin123
 
 ---
 
@@ -113,55 +195,47 @@ npm run build
 
 ---
 
-## 生产环境配置
+## 生产环境Nginx配置（推荐）
 
-### 使用Nginx（推荐）
-
-1. **安装Nginx**
+### 1. 安装Nginx
 ```bash
 # Ubuntu/Debian
-sudo apt update
-sudo apt install nginx
+sudo apt update && sudo apt install -y nginx
 
-# CentOS/RHEL
-sudo yum install nginx
-# 或
-sudo dnf install nginx
+# CentOS/RHEL/Alibaba Cloud Linux
+sudo yum install -y nginx
 ```
 
-2. **配置Nginx**
+### 2. 配置Nginx反向代理
 ```bash
 # 复制配置文件
-sudo cp nginx.conf /etc/nginx/sites-available/timevalue
-sudo ln -s /etc/nginx/sites-available/timevalue /etc/nginx/sites-enabled/
+sudo cp nginx.conf /etc/nginx/conf.d/timevalue.conf
 
-# 修改配置文件中的域名和路径
-sudo nano /etc/nginx/sites-available/timevalue
+# 编辑配置（修改域名）
+sudo nano /etc/nginx/conf.d/timevalue.conf
 
 # 测试配置
 sudo nginx -t
 
-# 重启Nginx
-sudo systemctl restart nginx
+# 启动Nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
 ```
 
-3. **配置SSL（可选）**
+### 3. 配置SSL证书（推荐）
 ```bash
-# 使用Let's Encrypt
-sudo apt install certbot python3-certbot-nginx
+# 使用Let's Encrypt免费证书
+sudo yum install -y certbot python3-certbot-nginx  # CentOS/Alibaba
+# 或
+sudo apt install -y certbot python3-certbot-nginx  # Ubuntu
+
+# 自动配置SSL
 sudo certbot --nginx -d your-domain.com
 ```
 
-### 使用系统服务
-
-```bash
-# 启用服务
-sudo systemctl enable timevalue-backend
-sudo systemctl start timevalue-backend
-
-# 检查状态
-sudo systemctl status timevalue-backend
-```
+配置后访问：
+- HTTP: http://your-domain.com
+- HTTPS: https://your-domain.com
 
 ---
 

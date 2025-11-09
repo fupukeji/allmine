@@ -10,7 +10,9 @@ import {
   SettingOutlined,
   AreaChartOutlined,
   TeamOutlined,
-  BankOutlined
+  BankOutlined,
+  CloudServerOutlined,
+  FileTextOutlined
 } from '@ant-design/icons'
 import { getProfile } from '../services/auth'
 
@@ -93,11 +95,23 @@ const AppLayout = ({ onLogout, userInfo }) => {
       icon: <AreaChartOutlined />,
       label: 'BI 分析',
     },
-    ...(currentUser?.role === 'admin' ? [{
-      key: '/users',
-      icon: <TeamOutlined />,
-      label: '用户管理',
-    }] : [])
+    {
+      key: '/reports',
+      icon: <FileTextOutlined />,
+      label: '智能报告',
+    },
+    ...(currentUser?.role === 'admin' ? [
+      {
+        key: '/users',
+        icon: <TeamOutlined />,
+        label: '用户管理',
+      },
+      {
+        key: '/nginx',
+        icon: <CloudServerOutlined />,
+        label: 'Nginx配置',
+      }
+    ] : [])
   ]
 
   const userMenuItems = [

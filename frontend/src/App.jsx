@@ -11,6 +11,8 @@ import AssetIncomeManagement from './pages/AssetIncomeManagement'
 import Analytics from './pages/Analytics'
 import UserManagement from './pages/UserManagement'
 import UserProfile from './pages/UserProfile'
+import NginxConfig from './pages/NginxConfig'
+import AIReports from './pages/AIReports'
 import AppLayout from './components/Layout'
 import { getToken, removeToken } from './utils/auth'
 import { checkToken } from './services/auth'
@@ -101,9 +103,13 @@ function App() {
               <Route path="assets" element={<FixedAssets />} />
               <Route path="assets/:assetId/income" element={<AssetIncomeManagement />} />
               <Route path="analytics" element={<Analytics />} />
+              <Route path="reports" element={<AIReports />} />
               <Route path="profile" element={<UserProfile />} />
               {userInfo?.role === 'admin' && (
-                <Route path="users" element={<UserManagement />} />
+                <>
+                  <Route path="users" element={<UserManagement />} />
+                  <Route path="nginx" element={<NginxConfig />} />
+                </>
               )}
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

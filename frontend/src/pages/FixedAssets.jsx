@@ -47,8 +47,47 @@ import { getCategories } from '../services/categories'
 
 const { Title } = Typography
 const { TextArea } = Input
-const { Option } = Select
+const { Option, OptGroup } = Select
 const { TabPane } = Tabs
+
+// 分类分组定义
+const categoryGroups = {
+  virtual: {
+    title: '随风而逝（虚拟消耗型资产）',
+    keywords: ['视频', '音乐', '知识', '外卖', '电商', '出行', '云存储', 
+               '游戏', '直播', '电子书', '课程', '软件', '会员', '充值', '道具', '礼物']
+  },
+  fixed: {
+    title: '恒产生金（固定资产）',
+    keywords: ['房产', '车辆', '车位', '车库', '珠宝', '首饰', '艺术', '收藏', 
+               '名包', '名表', '电脑', '手机', '数码', '摄影', '器材', 
+               '家电', '家具', '智能家居']
+  },
+  financial: {
+    title: '金融流动资产',
+    keywords: ['银行', '存款', '现金', '支付宝', '微信', '股票', '基金', 
+               '债券', '理财', '数字货币', '比特币', '保险', '社保', '公积金']
+  },
+  liability: {
+    title: '负债管理',
+    keywords: ['房贷', '车贷', '信用卡', '消费贷', '花呗', '白条', '借呗', 
+               '经营贷款', '私人借款', '借款']
+  },
+  other: {
+    title: '其他资产',
+    keywords: ['应收', '预付', '积分', '权益', '其他']
+  }
+}
+
+// 根据分类名称判断所属组
+const getCategoryGroup = (categoryName) => {
+  for (const [groupKey, groupConfig] of Object.entries(categoryGroups)) {
+    if (groupConfig.keywords.some(keyword => categoryName.includes(keyword))) {
+      return groupKey
+    }
+  }
+  return 'other'
+}
 
 const FixedAssets = () => {
   const navigate = useNavigate()
@@ -68,8 +107,27 @@ const FixedAssets = () => {
   const [assetIncomes, setAssetIncomes] = useState([])
   const [incomeAnalysis, setIncomeAnalysis] = useState(null)
   const [incomeLoading, setIncomeLoading] = useState(false)
+  const [selectedCategoryGroup, setSelectedCategoryGroup] = useState(null) // 新增
   const [form] = Form.useForm()
   const [incomeForm] = Form.useForm()
+
+  // 分组分类
+  const groupedCategories = React.useMemo(() => {
+    const grouped = {
+      virtual: [],
+      fixed: [],
+      financial: [],
+      liability: [],
+      other: []
+    }
+    
+    categories.forEach(category => {
+      const group = getCategoryGroup(category.name)
+      grouped[group].push(category)
+    })
+    
+    return grouped
+  }, [categories])
 
   useEffect(() => {
     fetchData()
@@ -125,6 +183,7 @@ const FixedAssets = () => {
 
   const handleAdd = () => {
     setEditingAsset(null)
+    setSelectedCategoryGroup(null)
     setModalVisible(true)
     form.resetFields()
     form.setFieldsValue({
@@ -140,8 +199,15 @@ const FixedAssets = () => {
   const handleEdit = (asset) => {
     setEditingAsset(asset)
     setModalVisible(true)
+    
+    // 根据分类找到对应的组
+    const category = categories.find(c => c.id === asset.category_id)
+    const categoryGroup = category ? getCategoryGroup(category.name) : null
+    setSelectedCategoryGroup(categoryGroup)
+    
     form.setFieldsValue({
       ...asset,
+      category_group: categoryGroup,
       purchase_date: asset.purchase_date ? dayjs(asset.purchase_date) : null,
       depreciation_start_date: asset.depreciation_start_date ? dayjs(asset.depreciation_start_date) : null,
     })
@@ -470,13 +536,23 @@ const FixedAssets = () => {
             </Button>
             <Select
               placeholder="筛选分类"
-              style={{ width: 120 }}
+              style={{ width: 200 }}
               allowClear
+              showSearch
+              optionFilterProp="children"
               onChange={(value) => setFilters({ ...filters, category_id: value })}
             >
-              {categories.map(cat => (
-                <Option key={cat.id} value={cat.id}>{cat.name}</Option>
-              ))}
+              {Object.entries(categoryGroups).map(([groupKey, groupConfig]) => {
+                const groupData = groupedCategories[groupKey] || []
+                if (groupData.length === 0) return null
+                return (
+                  <OptGroup key={groupKey} label={groupConfig.title}>
+                    {groupData.map(cat => (
+                      <Option key={cat.id} value={cat.id}>{cat.name}</Option>
+                    ))}
+                  </OptGroup>
+                )
+              })}
             </Select>
             <Select
               placeholder="筛选状态"
@@ -659,16 +735,49 @@ const FixedAssets = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                label="所属分类"
-                name="category_id"
-                rules={[{ required: true, message: '请选择分类!' }]}
-              >
-                <Select placeholder="请选择分类">
-                  {categories.map(cat => (
-                    <Option key={cat.id} value={cat.id}>{cat.name}</Option>
-                  ))}
-                </Select>
+              <Form.Item label="资产类型">
+                <Space.Compact style={{ width: '100%' }}>
+                  <Form.Item
+                    noStyle
+                    name="category_group"
+                  >
+                    <Select
+                      placeholder="一级分类"
+                      style={{ width: '50%' }}
+                      onChange={(value) => {
+                        setSelectedCategoryGroup(value)
+                        form.setFieldsValue({ category_id: undefined })
+                      }}
+                    >
+                      {Object.entries(categoryGroups).map(([groupKey, groupConfig]) => {
+                        const groupData = groupedCategories[groupKey] || []
+                        if (groupData.length === 0) return null
+                        return (
+                          <Option key={groupKey} value={groupKey}>
+                            {groupConfig.title}
+                          </Option>
+                        )
+                      })}
+                    </Select>
+                  </Form.Item>
+                  <Form.Item
+                    noStyle
+                    name="category_id"
+                    rules={[{ required: true, message: '请选择分类!' }]}
+                  >
+                    <Select
+                      placeholder="二级分类"
+                      style={{ width: '50%' }}
+                      showSearch
+                      optionFilterProp="children"
+                      disabled={!selectedCategoryGroup}
+                    >
+                      {selectedCategoryGroup && (groupedCategories[selectedCategoryGroup] || []).map(cat => (
+                        <Option key={cat.id} value={cat.id}>{cat.name}</Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Space.Compact>
               </Form.Item>
             </Col>
             <Col span={12}>
