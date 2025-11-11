@@ -242,7 +242,7 @@ const UserProfile = () => {
   }
 
   const formatDate = (date) => {
-    return date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : '-'
+    return date ? dayjs(date).format('YYYY-MM-DD') : '-'
   }
 
   const getRoleColor = (role) => {
@@ -632,7 +632,7 @@ const UserProfile = () => {
               确认清空数据库
             </Space>
           }
-          visible={resetModalVisible}
+          open={resetModalVisible}
           onCancel={() => {
             setResetModalVisible(false)
             resetForm.resetFields()

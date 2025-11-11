@@ -31,8 +31,11 @@ class User(db.Model):
     email_notifications = db.Column(db.Boolean, default=True)  # 邮件通知
     sms_notifications = db.Column(db.Boolean, default=False)  # 短信通知
     
-    # 智谱AI API配置（加密存储）
-    aliyun_api_token_encrypted = db.Column(db.Text)  # 加密后的智谱AI API Key
+    # AI服务商API配置（加密存储）
+    zhipu_api_key_encrypted = db.Column(db.Text)  # 智谱AI API Key
+    
+    # 兼容旧字段（可以后续删除）
+    aliyun_api_token_encrypted = db.Column(db.Text)  # 废弃，使用zhipu_api_key_encrypted
     
     # 关联关系
     categories = db.relationship('Category', backref='user', lazy=True, cascade='all, delete-orphan')
@@ -69,30 +72,57 @@ class User(db.Model):
         # 确保密钥长度为32字节
         return key.ljust(32)[:32].encode()
     
-    def set_aliyun_api_token(self, token):
-        """加密并存储智谱AI API Key（使用base64编码）"""
-        if not token:
-            self.aliyun_api_token_encrypted = None
+    def set_ai_api_key(self, api_key):
+        """
+        加密并存储AI服务商API Key（仅支持智谱AI）
+        :param api_key: API密钥
+        """
+        if not api_key:
+            self.zhipu_api_key_encrypted = None
             return
         
         try:
-            # 使用base64编码（简单且可靠）
-            self.aliyun_api_token_encrypted = base64.b64encode(token.encode()).decode()
+            # 使用base64编码
+            encrypted = base64.b64encode(api_key.encode()).decode()
+            self.zhipu_api_key_encrypted = encrypted
         except Exception as e:
-            print(f"Token编码失败: {str(e)}")
+            print(f"API Key编码失败: {str(e)}")
             raise
     
-    def get_aliyun_api_token(self):
-        """解密并返回智谱AI API Key"""
-        if not self.aliyun_api_token_encrypted:
+    def get_ai_api_key(self):
+        """
+        解密并返回AI服务商API Key（智谱AI）
+        :return: API密钥
+        """
+        encrypted = self.zhipu_api_key_encrypted
+        
+        if not encrypted:
             return None
         
         try:
-            # base64解码
-            return base64.b64decode(self.aliyun_api_token_encrypted.encode()).decode()
+            return base64.b64decode(encrypted.encode()).decode()
         except Exception as e:
-            print(f"Token解码失败: {str(e)}")
+            print(f"API Key解码失败: {str(e)}")
             return None
+    
+    # 兼容旧方法
+    def set_aliyun_api_token(self, token):
+        """兼容旧方法，实际存储到zhipu_api_key_encrypted"""
+        self.set_ai_api_key(token)
+    
+    def get_aliyun_api_token(self):
+        """兼容旧方法，从zhipu_api_key_encrypted读取"""
+        # 先尝试从新字段读取
+        key = self.get_ai_api_key()
+        if key:
+            return key
+        # 兼容旧数据
+        if self.aliyun_api_token_encrypted:
+            try:
+                return base64.b64decode(self.aliyun_api_token_encrypted.encode()).decode()
+            except:
+                return None
+        return None
     
     def to_dict(self):
         """转换为字典"""

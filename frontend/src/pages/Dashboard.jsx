@@ -47,7 +47,18 @@ const Dashboard = () => {
       }
 
       if (projectsResponse.code === 200) {
-        setRecentProjects(projectsResponse.data.slice(0, 5))
+        const projects = projectsResponse.data
+        // 按到期时间排序：快到期的排在前面
+        const sortedProjects = projects.sort((a, b) => {
+          const now = new Date()
+          const endTimeA = new Date(a.end_time)
+          const endTimeB = new Date(b.end_time)
+          // 计算剩余天数
+          const daysLeftA = Math.ceil((endTimeA - now) / (1000 * 60 * 60 * 24))
+          const daysLeftB = Math.ceil((endTimeB - now) / (1000 * 60 * 60 * 24))
+          return daysLeftA - daysLeftB  // 升序：快到期的在前
+        })
+        setRecentProjects(sortedProjects.slice(0, 5))
       }
     } catch (error) {
       console.error('获取数据失败:', error)
@@ -97,6 +108,33 @@ const Dashboard = () => {
       dataIndex: 'remaining_value',
       key: 'remaining_value',
       render: (value) => `¥${value.toFixed(2)}`,
+    },
+    {
+      title: '剩余天数',
+      dataIndex: 'end_time',
+      key: 'days_left',
+      render: (endTime) => {
+        const now = new Date()
+        const end = new Date(endTime)
+        const daysLeft = Math.ceil((end - now) / (1000 * 60 * 60 * 24))
+        
+        let color = '#52c41a'
+        let icon = null
+        if (daysLeft < 0) {
+          color = '#f5222d'
+          icon = <WarningOutlined style={{ marginRight: 4 }} />
+        } else if (daysLeft < 7) {
+          color = '#faad14'
+          icon = <ClockCircleOutlined style={{ marginRight: 4 }} />
+        }
+        
+        return (
+          <span style={{ color, fontWeight: 'bold' }}>
+            {icon}
+            {daysLeft < 0 ? `已过期${Math.abs(daysLeft)}天` : `${daysLeft}天`}
+          </span>
+        )
+      },
     },
     {
       title: '消耗进度',

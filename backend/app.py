@@ -32,7 +32,8 @@ def create_app():
     # 初始化扩展
     db.init_app(app)
     jwt.init_app(app)
-    CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
+    # 允许局域网访问 - 支持所有IP
+    CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://192.168.1.110:3000"], supports_credentials=True)
     
     # 在初始化扩展后立即导入所有模型
     from models.user import User
@@ -71,6 +72,17 @@ def create_app():
     with app.app_context():
         print("Debug: Creating database tables...")
         try:
+            # 先尝试添加新字段（如果不存在）
+            from sqlalchemy import text
+            try:
+                db.session.execute(text("ALTER TABLE users ADD COLUMN zhipu_api_key_encrypted TEXT"))
+                db.session.commit()
+                print("Added zhipu_api_key_encrypted column")
+            except Exception as e:
+                db.session.rollback()
+                if "duplicate column" not in str(e).lower():
+                    print(f"zhipu_api_key_encrypted: {e}")
+            
             # 只创建表，不删除现有数据
             db.create_all()
             print("Debug: Tables created successfully")

@@ -481,7 +481,7 @@ const NginxConfig = () => {
       {/* 预览模态框 */}
       <Modal
         title="Nginx配置预览"
-        visible={previewVisible}
+        open={previewVisible}
         onCancel={() => setPreviewVisible(false)}
         width={800}
         footer={[

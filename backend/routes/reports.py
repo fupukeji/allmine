@@ -4,7 +4,7 @@ from models.user import User
 from models.ai_report import AIReport
 from database import db
 from datetime import datetime, timedelta, date
-from services.alibabacloud_service import ZhipuAiService
+from services.zhipu_service import ZhipuAiService
 import json
 
 reports_bp = Blueprint('reports', __name__)
@@ -17,7 +17,7 @@ def get_current_user():
 @reports_bp.route('/reports/token', methods=['POST'])
 @jwt_required()
 def save_api_token():
-    """保存用户的阿里云API Token"""
+    """保存用户的AI API Key（仅支持智谱AI）"""
     try:
         user = get_current_user()
         if not user:
@@ -27,21 +27,21 @@ def save_api_token():
             }), 404
         
         data = request.get_json()
-        api_token = data.get('api_token', '').strip()
+        api_key = data.get('api_key', '').strip()
         
-        if not api_token:
+        if not api_key:
             return jsonify({
                 'success': False,
-                'message': 'API Token不能为空'
+                'message': 'API Key不能为空'
             }), 400
         
-        # 加密保存Token
-        user.set_aliyun_api_token(api_token)
+        # 加密保存API Key
+        user.set_ai_api_key(api_key)
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'message': 'API Token保存成功'
+            'message': '智谱AI API Key保存成功'
         }), 200
         
     except Exception as e:
@@ -54,7 +54,7 @@ def save_api_token():
 @reports_bp.route('/reports/token', methods=['GET'])
 @jwt_required()
 def check_api_token():
-    """检查用户是否已配置API Token"""
+    """检查用户是否已配置API Key（仅支持智谱AI）"""
     try:
         user = get_current_user()
         if not user:
@@ -63,12 +63,25 @@ def check_api_token():
                 'message': '用户不存在'
             }), 404
         
-        has_token = user.aliyun_api_token_encrypted is not None
+        # 检查智谱AI的Key配置情况
+        has_token = user.get_ai_api_key() is not None
+        
+        # 获取加密后的Key显示（前4+后4位）
+        masked_key = None
+        if has_token:
+            full_key = user.get_ai_api_key()
+            if len(full_key) > 8:
+                masked_key = f"{full_key[:4]}{'*' * (len(full_key) - 8)}{full_key[-4:]}"
+            else:
+                masked_key = '*' * len(full_key)
         
         return jsonify({
             'success': True,
             'data': {
-                'has_token': has_token
+                'has_token': has_token,
+                'provider': 'zhipu',
+                'provider_name': '智谱AI',
+                'masked_key': masked_key
             }
         }), 200
         
@@ -76,6 +89,56 @@ def check_api_token():
         return jsonify({
             'success': False,
             'message': f'检查失败：{str(e)}'
+        }), 500
+
+@reports_bp.route('/reports/token/reveal', methods=['POST'])
+@jwt_required()
+def reveal_api_token():
+    """显示完整的API Key（需要密码验证）"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': '用户不存在'
+            }), 404
+        
+        data = request.get_json()
+        password = data.get('password', '').strip()
+        
+        if not password:
+            return jsonify({
+                'success': False,
+                'message': '请输入密码'
+            }), 400
+        
+        # 验证密码
+        if not user.check_password(password):
+            return jsonify({
+                'success': False,
+                'message': '密码错误'
+            }), 401
+        
+        # 获取完整的API Key
+        api_key = user.get_ai_api_key()
+        
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'message': '未配置API Key'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'api_key': api_key
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'获取失败：{str(e)}'
         }), 500
 
 @reports_bp.route('/reports/generate', methods=['POST'])
@@ -90,12 +153,13 @@ def generate_report():
                 'message': '用户不存在'
             }), 404
         
-        # 检查是否配置了API Token
-        api_token = user.get_aliyun_api_token()
-        if not api_token:
+        # 检查是否配置了API Key
+        api_key = user.get_ai_api_key()
+        
+        if not api_key:
             return jsonify({
                 'success': False,
-                'message': '请先配置阿里云API Token'
+                'message': '请先配置智谱AI的API Key'
             }), 400
         
         data = request.get_json()
@@ -141,9 +205,18 @@ def generate_report():
         db.session.add(report)
         db.session.commit()
         
-        # 调用智谱AI生成报告
+        # 调用AI服务生成报告
         try:
-            service = ZhipuAiService(api_token)
+            print(f"\n{'='*80}")
+            print(f"[报告生成请求] 开始处理")
+            print(f"- 用户ID: {user.id}")
+            print(f"- 报告类型: {report_type}")
+            print(f"- 时间范围: {start_date} 至 {end_date}")
+            print(f"- API Key存在: {api_key is not None}")
+            print(f"- API Key长度: {len(api_key) if api_key else 0}")
+            print(f"{'='*80}\n")
+            
+            service = ZhipuAiService(api_key)
             
             if report_type == 'weekly':
                 content = service.generate_weekly_report(user.id, start_date, end_date)
@@ -180,6 +253,14 @@ def generate_report():
             
         except Exception as api_error:
             # API调用失败
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"\n=== 报告生成API错误 ===")
+            print(f"错误类型: {type(api_error).__name__}")
+            print(f"错误信息: {str(api_error)}")
+            print(f"详细堆栈:\n{error_details}")
+            print("=" * 50)
+            
             report.status = 'failed'
             report.error_message = str(api_error)
             db.session.commit()

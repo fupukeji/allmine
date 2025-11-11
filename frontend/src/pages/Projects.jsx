@@ -221,9 +221,9 @@ const Projects = () => {
       // 格式化时间
       const projectData = {
         ...values,
-        start_time: values.start_time ? values.start_time.format('YYYY-MM-DD HH:mm:ss') : null,
-        end_time: values.end_time ? values.end_time.format('YYYY-MM-DD HH:mm:ss') : null,
-        purchase_time: values.purchase_time ? values.purchase_time.format('YYYY-MM-DD HH:mm:ss') : null,
+        start_time: values.start_time ? values.start_time.format('YYYY-MM-DD') : null,
+        end_time: values.end_time ? values.end_time.format('YYYY-MM-DD') : null,
+        purchase_time: values.purchase_time ? values.purchase_time.format('YYYY-MM-DD') : null,
       }
       
       if (editingProject) {
@@ -555,8 +555,7 @@ const Projects = () => {
               >
                 <DatePicker
                   style={{ width: '100%' }}
-                  showTime
-                  format="YYYY-MM-DD HH:mm:ss"
+                  format="YYYY-MM-DD"
                   placeholder="选择开始时间"
                 />
               </Form.Item>
@@ -569,8 +568,7 @@ const Projects = () => {
               >
                 <DatePicker
                   style={{ width: '100%' }}
-                  showTime
-                  format="YYYY-MM-DD HH:mm:ss"
+                  format="YYYY-MM-DD"
                   placeholder="选择结束时间"
                 />
               </Form.Item>
@@ -583,8 +581,7 @@ const Projects = () => {
           >
             <DatePicker
               style={{ width: '100%' }}
-              showTime
-              format="YYYY-MM-DD HH:mm:ss"
+              format="YYYY-MM-DD"
               placeholder="选择购买时间"
             />
           </Form.Item>
@@ -688,13 +685,13 @@ const Projects = () => {
                 </Col>
                 <Col span={12}>
                   <p><strong>购买时间：</strong>
-                    {selectedProject.purchase_time ? dayjs(selectedProject.purchase_time).format('YYYY-MM-DD HH:mm') : '未设置'}
+                    {selectedProject.purchase_time ? dayjs(selectedProject.purchase_time).format('YYYY-MM-DD') : '未设置'}
                   </p>
                   <p><strong>开始时间：</strong>
-                    {dayjs(selectedProject.start_time).format('YYYY-MM-DD HH:mm')}
+                    {dayjs(selectedProject.start_time).format('YYYY-MM-DD')}
                   </p>
                   <p><strong>结束时间：</strong>
-                    {dayjs(selectedProject.end_time).format('YYYY-MM-DD HH:mm')}
+                    {dayjs(selectedProject.end_time).format('YYYY-MM-DD')}
                   </p>
                 </Col>
               </Row>

@@ -5,7 +5,7 @@ import { message } from 'antd'
 // 创建axios实例
 const api = axios.create({
   baseURL: '/api',
-  timeout: 10000,
+  timeout: 60000, // 增加到60秒，用于AI报告生成等耗时操作
 })
 
 // 请求拦截器
@@ -45,6 +45,9 @@ api.interceptors.response.use(
       } else if (data && data.message) {
         message.error(data.message)
       }
+    } else if (error.code === 'ECONNABORTED') {
+      // 请求超时，不显示错误（因为报告生成是异步的）
+      console.log('请求超时，但后台仍在处理')
     } else if (error.request) {
       message.error('网络连接失败')
     } else {

@@ -33,6 +33,7 @@ import {
 } from '@ant-design/icons';
 import request from '../utils/request';
 import dayjs from 'dayjs';
+import ReportRenderer from '../components/ReportRenderer'; // 引入增强渲染器
 
 const { Title, Paragraph, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -44,18 +45,29 @@ const AIReports = () => {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
   const [hasToken, setHasToken] = useState(false);
+  const [maskedKey, setMaskedKey] = useState(null);
   const [tokenModalVisible, setTokenModalVisible] = useState(false);
   const [generateModalVisible, setGenerateModalVisible] = useState(false);
   const [reportDetailVisible, setReportDetailVisible] = useState(false);
   const [currentReport, setCurrentReport] = useState(null);
   const [form] = Form.useForm();
   const [tokenForm] = Form.useForm();
+  const [autoRefreshTimer, setAutoRefreshTimer] = useState(null); // 自动刷新定时器
+  const [showFullKey, setShowFullKey] = useState(false); // 是否显示完整Key
+  const [fullKey, setFullKey] = useState(''); // 完整的Key
 
   // 加载数据
   useEffect(() => {
     checkApiToken();
     loadStats();
     loadReports();
+    
+    // 组件卸载时清除定时器
+    return () => {
+      if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+      }
+    };
   }, []);
 
   // 检查API Token
@@ -64,8 +76,10 @@ const AIReports = () => {
       const response = await request.get('/reports/token');
       if (response.success) {
         setHasToken(response.data.has_token);
+        setMaskedKey(response.data.masked_key);
+        
         if (!response.data.has_token) {
-          message.warning('请先配置阿里云API Token');
+          message.warning('请先配置智谱AI API Key');
         }
       }
     } catch (error) {
@@ -100,27 +114,77 @@ const AIReports = () => {
     }
   };
 
-  // 保存API Token
+  // 保存API Key
   const handleSaveToken = async (values) => {
     try {
       const response = await request.post('/reports/token', {
-        api_token: values.api_token
+        api_key: values.api_key
       });
       if (response.success) {
-        message.success('API Token保存成功');
-        setHasToken(true);
+        message.success('API Key保存成功');
         setTokenModalVisible(false);
         tokenForm.resetFields();
+        setShowFullKey(false);
+        setFullKey('');
+        // 重新检查Token状态
+        checkApiToken();
       } else {
-        message.error(response.message || 'Token保存失败');
+        message.error(response.message || 'Key保存失败');
       }
     } catch (error) {
-      message.error(error.response?.data?.message || 'Token保存失败');
+      console.error('Key保存错误:', error);
     }
   };
 
+  // 显示完整Key（需要密码验证）
+  const handleRevealKey = async () => {
+    Modal.confirm({
+      title: '验证密码',
+      content: (
+        <Input.Password
+          id="reveal-password"
+          placeholder="请输入你的登录密码"
+          onPressEnter={(e) => {
+            document.querySelector('.ant-modal-confirm-btns .ant-btn-primary').click();
+          }}
+        />
+      ),
+      okText: '确认',
+      cancelText: '取消',
+      onOk: async () => {
+        const password = document.getElementById('reveal-password').value;
+        if (!password) {
+          message.error('请输入密码');
+          return Promise.reject();
+        }
+        
+        try {
+          const response = await request.post('/reports/token/reveal', { password });
+          if (response.success) {
+            setFullKey(response.data.api_key);
+            setShowFullKey(true);
+            message.success('已显示完整Key');
+          }
+        } catch (error) {
+          if (error.response?.status === 401) {
+            message.error('密码错误');
+          } else {
+            message.error('获取失败');
+          }
+          return Promise.reject();
+        }
+      }
+    });
+  };
+
+  // 隐藏Key
+  const handleHideKey = () => {
+    setShowFullKey(false);
+    setFullKey('');
+  };
+
   // 生成报告
-  const handleGenerateReport = async (values) => {
+  const handleGenerateReport = async (values) => {  
     try {
       const payload = {
         report_type: values.report_type
@@ -134,22 +198,85 @@ const AIReports = () => {
         }
       }
 
-      message.loading('正在生成报告，请稍候...', 0);
-
-      const response = await request.post('/reports/generate', payload);
+      // 立即关闭窗口
+      setGenerateModalVisible(false);
+      form.resetFields();
       
-      message.destroy();
-
-      if (response.success) {
-        message.success('报告生成成功');
-        setGenerateModalVisible(false);
-        form.resetFields();
-        loadReports();
-        loadStats();
+      // 显示提示，告诉用户报告正在生成
+      const hideLoading = message.loading('报告生成中，请稍候...', 0);
+      
+      // 先清除之前的定时器
+      if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
       }
+      
+      // 启动定时刷新（每3秒刷新一次）
+      let refreshCount = 0;
+      const maxRefreshCount = 10; // 最多刷新30秒（10次 x 3秒）
+      
+      const timer = setInterval(async () => {
+        refreshCount++;
+        await loadReports();
+        await loadStats();
+        
+        // 达到最大刷新次数，停止刷新
+        if (refreshCount >= maxRefreshCount) {
+          clearInterval(timer);
+          setAutoRefreshTimer(null);
+          hideLoading();
+          message.info('已停止自动刷新，请手动查看报告');
+        }
+      }, 3000); // 每3秒刷新一次
+      
+      setAutoRefreshTimer(timer);
+
+      // 发送生成请求（异步，不等待结果）
+      request.post('/reports/generate', payload).then(response => {
+        if (response.success) {
+          // 成功后立即停止刷新
+          if (timer) {
+            clearInterval(timer);
+            setAutoRefreshTimer(null);
+          }
+          hideLoading();
+          message.success('报告生成成功！');
+          // 立即刷新一次
+          loadReports();
+          loadStats();
+        }
+      }).catch(error => {
+        // 错误后也停止刷新
+        if (timer) {
+          clearInterval(timer);
+          setAutoRefreshTimer(null);
+        }
+        hideLoading();
+        
+        // 如果是超时错误，不显示，因为后台仍在处理
+        if (error.code === 'ECONNABORTED') {
+          message.warning('请求超时，但报告正在后台生成，请稍后查看...');
+          return; // 不显示错误
+        }
+        
+        console.error('报告生成错误:', error);
+        
+        // 如果是API Token配置问题，提示用户配置
+        if (error.response?.status === 400 && error.response?.data?.message?.includes('API')) {
+          Modal.confirm({
+            title: '未配置API Key',
+            content: '请先配置AI API Key才能生成智能报告',
+            okText: '立即配置',
+            cancelText: '取消',
+            onOk: () => setTokenModalVisible(true)
+          });
+        } else {
+          message.error('报告生成失败：' + (error.response?.data?.message || error.message || '未知错误'));
+        }
+      });
+      
     } catch (error) {
-      message.destroy();
-      message.error(error.response?.data?.message || '报告生成失败');
+      console.error('提交报告生成请求失败:', error);
+      message.error('提交失败，请重试');
     }
   };
 
@@ -191,152 +318,13 @@ const AIReports = () => {
   // 渲染报告内容
   const renderReportContent = (report) => {
     try {
-      const content = JSON.parse(report.content);
+      const content = typeof report.content === 'string' ? JSON.parse(report.content) : report.content;
       
-      // 周报格式
-      if (report.report_type === 'weekly' && content.executive_summary) {
-        return (
-          <div>
-            <Title level={4}>执行摘要</Title>
-            <Paragraph>{content.executive_summary}</Paragraph>
-
-            {content.asset_analysis && (
-              <>
-                <Divider />
-                <Title level={4}>资产分析</Title>
-                <Paragraph><strong>整体健康度：</strong>{content.asset_analysis.overall_health}</Paragraph>
-                <Paragraph><strong>价值趋势：</strong>{content.asset_analysis.value_trends}</Paragraph>
-                <Paragraph><strong>折旧分析：</strong>{content.asset_analysis.depreciation_analysis}</Paragraph>
-              </>
-            )}
-
-            {content.income_analysis && (
-              <>
-                <Divider />
-                <Title level={4}>收入分析</Title>
-                <Paragraph><strong>收入表现：</strong>{content.income_analysis.income_performance}</Paragraph>
-                <Paragraph><strong>ROI估算：</strong>{content.income_analysis.roi_estimation}</Paragraph>
-              </>
-            )}
-
-            {content.risk_assessment && (
-              <>
-                <Divider />
-                <Title level={4}>风险评估</Title>
-                <Tag color={content.risk_assessment.risk_level === 'low' ? 'green' : content.risk_assessment.risk_level === 'medium' ? 'orange' : 'red'}>
-                  风险等级：{content.risk_assessment.risk_level}
-                </Tag>
-                {content.risk_assessment.risk_factors && content.risk_assessment.risk_factors.length > 0 && (
-                  <>
-                    <Paragraph style={{ marginTop: 16 }}><strong>风险因素：</strong></Paragraph>
-                    <ul>
-                      {content.risk_assessment.risk_factors.map((factor, index) => (
-                        <li key={index}>{factor}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </>
-            )}
-
-            {content.recommendations && content.recommendations.length > 0 && (
-              <>
-                <Divider />
-                <Title level={4}>建议</Title>
-                <ul>
-                  {content.recommendations.map((rec, index) => (
-                    <li key={index}>{rec}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-
-            {content.next_week_focus && content.next_week_focus.length > 0 && (
-              <>
-                <Divider />
-                <Title level={4}>下周关注点</Title>
-                <ul>
-                  {content.next_week_focus.map((focus, index) => (
-                    <li key={index}>{focus}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
-        );
-      }
-
-      // 月报格式
-      if (report.report_type === 'monthly' && content.executive_summary) {
-        return (
-          <div>
-            <Title level={4}>执行摘要</Title>
-            <Paragraph>{content.executive_summary}</Paragraph>
-
-            {content.monthly_highlights && content.monthly_highlights.length > 0 && (
-              <>
-                <Divider />
-                <Title level={4}>本月亮点</Title>
-                <ul>
-                  {content.monthly_highlights.map((highlight, index) => (
-                    <li key={index}>{highlight}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-
-            {content.asset_analysis && (
-              <>
-                <Divider />
-                <Title level={4}>资产分析</Title>
-                {Object.entries(content.asset_analysis).map(([key, value]) => (
-                  <Paragraph key={key}><strong>{key}：</strong>{value}</Paragraph>
-                ))}
-              </>
-            )}
-
-            {content.recommendations && (
-              <>
-                <Divider />
-                <Title level={4}>建议</Title>
-                {content.recommendations.short_term && (
-                  <>
-                    <Paragraph><strong>短期建议：</strong></Paragraph>
-                    <ul>
-                      {content.recommendations.short_term.map((rec, index) => (
-                        <li key={index}>{rec}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-                {content.recommendations.long_term && (
-                  <>
-                    <Paragraph><strong>长期建议：</strong></Paragraph>
-                    <ul>
-                      {content.recommendations.long_term.map((rec, index) => (
-                        <li key={index}>{rec}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        );
-      }
-
-      // 通用格式（包括自定义报告）
-      if (content.raw_response) {
-        return (
-          <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
-            {content.raw_response}
-          </div>
-        );
-      }
-
-      return <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(content, null, 2)}</pre>;
+      // 使用增强渲染器（支持结构化、表格、图表）
+      return <ReportRenderer content={content} />;
 
     } catch (error) {
+      console.error('报告内容解析错误:', error);
       return <Text type="danger">报告内容解析失败</Text>;
     }
   };
@@ -385,7 +373,7 @@ const AIReports = () => {
       title: '生成时间',
       dataIndex: 'generated_at',
       key: 'generated_at',
-      render: (date) => date ? dayjs(date).format('YYYY-MM-DD HH:mm') : '-',
+      render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '-',
     },
     {
       title: '操作',
@@ -511,39 +499,95 @@ const AIReports = () => {
 
       {/* API Key配置弹窗 */}
       <Modal
-        title="配置智谱AI API Key"
-        visible={tokenModalVisible}
-        onCancel={() => setTokenModalVisible(false)}
+        title="配置AI服务API Key"
+        open={tokenModalVisible}
+        onCancel={() => {
+          setTokenModalVisible(false);
+          setShowFullKey(false);
+          setFullKey('');
+        }}
         footer={null}
+        width={600}
       >
         <Alert
-          message="如何获取API Key？"
-          description={
-            <div>
-              <p>1. 访问智谱AI开放平台：<a href="https://open.bigmodel.cn" target="_blank" rel="noopener noreferrer">https://open.bigmodel.cn</a></p>
-              <p>2. 注册并登录您的账户</p>
-              <p>3. 在API Keys管理页面创建API Key</p>
-              <p>4. 将API Key粘贴到下方输入框</p>
-            </div>
-          }
+          message="配置智谱AI API Key"
+          description="将用于生成智能报告和资产分析"
           type="info"
-          showIcon
           style={{ marginBottom: 16 }}
         />
+        
+        {/* 显示已保存的Key */}
+        {hasToken && maskedKey && (
+          <Alert
+            message="已保存的API Key"
+            description={
+              <div>
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <div>
+                    <strong>Key: </strong>
+                    {showFullKey ? (
+                      <span style={{ fontFamily: 'monospace' }}>{fullKey}</span>
+                    ) : (
+                      <span style={{ fontFamily: 'monospace' }}>{maskedKey}</span>
+                    )}
+                  </div>
+                  <Space>
+                    {!showFullKey ? (
+                      <Button size="small" onClick={handleRevealKey}>
+                        显示完整Key
+                      </Button>
+                    ) : (
+                      <Button size="small" onClick={handleHideKey}>
+                        隐藏Key
+                      </Button>
+                    )}
+                  </Space>
+                </Space>
+              </div>
+            }
+            type="success"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
+        
         <Form form={tokenForm} onFinish={handleSaveToken} layout="vertical">
+          <Alert
+            message="如何获取智谱AI API Key？"
+            description={
+              <div>
+                <p>1. 访问智谱AI开放平台：<a href="https://open.bigmodel.cn" target="_blank" rel="noopener noreferrer">https://open.bigmodel.cn</a></p>
+                <p>2. 注册并登录您的账户</p>
+                <p>3. 在API Keys管理页面创建API Key</p>
+                <p>4. 将API Key粘贴到下方输入框</p>
+              </div>
+            }
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+          
           <Form.Item
             label="API Key"
-            name="api_token"
+            name="api_key"
             rules={[{ required: true, message: '请输入API Key' }]}
           >
-            <TextArea rows={4} placeholder="请粘贴您的智谱AI API Key" />
+            <TextArea 
+              rows={4} 
+              placeholder="请粘贴您的智谱AI API Key"
+            />
           </Form.Item>
+          
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit">
                 保存
               </Button>
-              <Button onClick={() => setTokenModalVisible(false)}>
+              <Button onClick={() => {
+                setTokenModalVisible(false);
+                setShowFullKey(false);
+                setFullKey('');
+              }}>
                 取消
               </Button>
             </Space>
@@ -554,7 +598,7 @@ const AIReports = () => {
       {/* 生成报告弹窗 */}
       <Modal
         title="生成智能报告"
-        visible={generateModalVisible}
+        open={generateModalVisible}
         onCancel={() => setGenerateModalVisible(false)}
         footer={null}
         width={600}
@@ -614,14 +658,16 @@ const AIReports = () => {
       {/* 报告详情弹窗 */}
       <Modal
         title={currentReport?.title}
-        visible={reportDetailVisible}
+        open={reportDetailVisible}
         onCancel={() => setReportDetailVisible(false)}
         footer={[
           <Button key="close" onClick={() => setReportDetailVisible(false)}>
             关闭
           </Button>,
         ]}
-        width={900}
+        width={1200}
+        style={{ top: 20 }}
+        bodyStyle={{ maxHeight: '80vh', overflow: 'auto' }}
       >
         {currentReport && (
           <div>
