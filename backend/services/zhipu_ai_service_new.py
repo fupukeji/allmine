@@ -422,78 +422,187 @@ class ZhipuAIService:
             dict: ECharts配置数据
         """
         chart_data = {}
+        fa = current_data['fixed_assets']
+        va = current_data['virtual_assets']
         
         # 1. 资产配置饼图
         chart_data['asset_allocation_pie'] = [
             {
                 'name': '固定资产',
-                'value': float(current_data['fixed_assets']['total_current_value'])
+                'value': float(fa['total_current_value'])
             },
             {
                 'name': '虚拟资产',
-                'value': float(current_data['virtual_assets']['total_amount'])
+                'value': float(va['total_amount'])
             }
         ]
         
         # 2. 固定资产分类柱状图
-        if current_data['fixed_assets']['category_stats']:
+        if fa['category_stats']:
             chart_data['fixed_asset_categories'] = [
                 {
                     'category': cat_name,
                     'value': float(cat_data['total_value']),
-                    'count': cat_data['count']
+                    'count': cat_data['count'],
+                    'original_value': float(cat_data.get('original_value', cat_data['total_value']))
                 }
-                for cat_name, cat_data in current_data['fixed_assets']['category_stats'].items()
+                for cat_name, cat_data in fa['category_stats'].items()
             ]
         else:
             chart_data['fixed_asset_categories'] = []
         
-        # 3. 虚拟资产利用率仪表盘
+        # 3. 固定资产状态分布饼图
+        if fa.get('status_stats'):
+            chart_data['fixed_asset_status_pie'] = [
+                {'name': status, 'value': count}
+                for status, count in fa['status_stats'].items()
+            ]
+        else:
+            chart_data['fixed_asset_status_pie'] = []
+        
+        # 4. 虚拟资产利用率仪表盘
         chart_data['virtual_asset_utilization_gauge'] = {
-            'utilization_rate': current_data['virtual_assets']['utilization_rate'],
-            'waste_rate': current_data['virtual_assets']['waste_rate']
+            'utilization_rate': round(va['utilization_rate'], 1),
+            'waste_rate': round(va['waste_rate'], 1),
+            'total_amount': float(va['total_amount']),
+            'used_value': float(va['total_used_value']),
+            'remaining_value': float(va['total_remaining_value']),
+            'wasted_value': float(va['total_wasted_value'])
         }
         
-        # 4. 收入结构饼图
-        if current_data['fixed_assets'].get('income_by_category'):
+        # 5. 虚拟资产分类利用率表格/柱状图
+        if va.get('category_stats'):
+            virtual_categories = []
+            for cat_name, cat_data in va['category_stats'].items():
+                total = cat_data['total_amount']
+                wasted = cat_data.get('wasted_value', 0)
+                utilization = ((total - wasted) / total * 100) if total > 0 else 0
+                waste_rate = (wasted / total * 100) if total > 0 else 0
+                
+                virtual_categories.append({
+                    'category': cat_name,
+                    'count': cat_data['count'],
+                    'total_amount': float(total),
+                    'wasted_value': float(wasted),
+                    'utilization': round(utilization, 1),
+                    'waste': round(waste_rate, 1)
+                })
+            chart_data['virtual_asset_utilization'] = virtual_categories
+        else:
+            chart_data['virtual_asset_utilization'] = []
+        
+        # 6. 收入结构饼图
+        if fa.get('income_by_category'):
             chart_data['income_structure_pie'] = [
                 {
                     'source': cat_name,
                     'amount': float(amount)
                 }
-                for cat_name, amount in current_data['fixed_assets']['income_by_category'].items()
+                for cat_name, amount in fa['income_by_category'].items()
+                if amount > 0
             ]
         else:
             chart_data['income_structure_pie'] = []
         
-        # 5. 健康评分雷达图
-        fa_health = min(100, (current_data['fixed_assets']['total_current_value'] / 
-                              max(1, current_data['fixed_assets']['total_original_value']) * 100))
-        va_health = 100 - current_data['virtual_assets']['waste_rate']
-        income_health = min(100, current_data['fixed_assets']['total_income'] / 100) if current_data['fixed_assets']['total_income'] > 0 else 0
+        # 7. 健康评分雷达图
+        fa_health = min(100, (fa['total_current_value'] / max(1, fa['total_original_value']) * 100))
+        va_health = 100 - va['waste_rate']
+        income_health = min(100, fa['total_income'] / 100) if fa['total_income'] > 0 else 50
+        usage_health = min(100, (fa.get('status_stats', {}).get('在用', 0) / max(1, fa['total_assets']) * 100))
         
         chart_data['health_score_radar'] = [
             {'dimension': '固定资产', 'score': round(fa_health, 1), 'maxScore': 100},
             {'dimension': '虚拟资产', 'score': round(va_health, 1), 'maxScore': 100},
             {'dimension': '收益表现', 'score': round(income_health, 1), 'maxScore': 100},
+            {'dimension': '使用效率', 'score': round(usage_health, 1), 'maxScore': 100},
             {'dimension': '风险控制', 'score': 75, 'maxScore': 100}
         ]
         
-        # 6. 如果有上期数据,添加对比图表
+        # 8. 如果有上期数据,添加对比图表
         if previous_data:
-            chart_data['comparison_trend'] = {
-                'fixed_assets': [
-                    {'period': '上期', 'value': previous_data['fixed_assets']['total_current_value']},
-                    {'period': '本期', 'value': current_data['fixed_assets']['total_current_value']}
-                ],
-                'income': [
-                    {'period': '上期', 'value': previous_data['fixed_assets']['total_income']},
-                    {'period': '本期', 'value': current_data['fixed_assets']['total_income']}
-                ],
-                'utilization': [
-                    {'period': '上期', 'value': previous_data['virtual_assets']['utilization_rate']},
-                    {'period': '本期', 'value': current_data['virtual_assets']['utilization_rate']}
-                ]
+            prev_fa = previous_data['fixed_assets']
+            prev_va = previous_data['virtual_assets']
+            
+            # 8.1 资产价值趋势线图
+            chart_data['asset_value_trend'] = [
+                {
+                    'period': '上期',
+                    '固定资产': float(prev_fa['total_current_value']),
+                    '虚拟资产': float(prev_va['total_amount']),
+                    '总资产': float(prev_fa['total_current_value'] + prev_va['total_amount'])
+                },
+                {
+                    'period': '本期',
+                    '固定资产': float(fa['total_current_value']),
+                    '虚拟资产': float(va['total_amount']),
+                    '总资产': float(fa['total_current_value'] + va['total_amount'])
+                }
+            ]
+            
+            # 8.2 收入对比柱状图
+            chart_data['income_comparison'] = [
+                {'period': '上期', 'income': float(prev_fa['total_income'])},
+                {'period': '本期', 'income': float(fa['total_income'])}
+            ]
+            
+            # 8.3 利用率对比折线图
+            chart_data['utilization_comparison'] = [
+                {
+                    'period': '上期',
+                    '利用率': round(prev_va['utilization_rate'], 1),
+                    '浪费率': round(prev_va['waste_rate'], 1)
+                },
+                {
+                    'period': '本期',
+                    '利用率': round(va['utilization_rate'], 1),
+                    '浪费率': round(va['waste_rate'], 1)
+                }
+            ]
+            
+            # 8.4 环比变化指标
+            chart_data['change_indicators'] = {
+                'asset_change': {
+                    'value': float(fa['total_current_value'] + va['total_amount'] - prev_fa['total_current_value'] - prev_va['total_amount']),
+                    'percent': round(((fa['total_current_value'] + va['total_amount']) / max(1, prev_fa['total_current_value'] + prev_va['total_amount']) - 1) * 100, 2)
+                },
+                'income_change': {
+                    'value': float(fa['total_income'] - prev_fa['total_income']),
+                    'percent': round((fa['total_income'] / max(1, prev_fa['total_income']) - 1) * 100, 2) if prev_fa['total_income'] > 0 else 0
+                },
+                'utilization_change': {
+                    'value': round(va['utilization_rate'] - prev_va['utilization_rate'], 2),
+                    'percent': round(va['utilization_rate'] - prev_va['utilization_rate'], 2)
+                }
             }
+        
+        # 9. 虚拟资产状态分布堆叠柱状图
+        chart_data['virtual_asset_status'] = [
+            {'name': '活跃', 'value': va.get('active_count', 0)},
+            {'name': '已过期', 'value': va.get('expired_count', 0)},
+            {'name': '未开始', 'value': va.get('not_started_count', 0)}
+        ]
+        
+        # 10. 综合资产价值堆叠面积图（如果有历史数据）
+        if previous_data:
+            prev_fa = previous_data['fixed_assets']
+            prev_va = previous_data['virtual_assets']
+            chart_data['comprehensive_asset_area'] = [
+                {
+                    'period': '上期',
+                    '有形资产': float(prev_fa['total_current_value']),
+                    '活跃权益': float(prev_va['total_amount'] - prev_va['total_wasted_value']),
+                    '浪费权益': float(prev_va['total_wasted_value'])
+                },
+                {
+                    'period': '本期',
+                    '有形资产': float(fa['total_current_value']),
+                    '活跃权益': float(va['total_amount'] - va['total_wasted_value']),
+                    '浪费权益': float(va['total_wasted_value'])
+                }
+            ]
+        
+        print(f"[DEBUG] 生成了 {len(chart_data)} 个图表数据集")
+        for key in chart_data.keys():
+            print(f"  - {key}")
         
         return chart_data

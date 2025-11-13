@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import {
   PieChart, Pie, Cell, BarChart, Bar, RadarChart, Radar, PolarGrid,
   PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer
+  Tooltip, Legend, ResponsiveContainer, LineChart, Line
 } from 'recharts';
 
 const { Title, Paragraph, Text } = Typography;
@@ -99,10 +99,11 @@ const ReportRenderer = ({ content }) => {
           <>
             <Divider style={{ margin: '32px 0' }}>📊 数据可视化</Divider>
             
+            {/* 第一行: 资产配置 + 健康评分 */}
             <Row gutter={16}>
               <Col span={12}>
                 {chartData.asset_allocation_pie && chartData.asset_allocation_pie.length > 0 && (
-                  <Card title="资产配置分布" style={{ marginBottom: 16 }}>
+                  <Card title="🧩 资产配置分布" style={{ marginBottom: 16 }}>
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
@@ -128,14 +129,15 @@ const ReportRenderer = ({ content }) => {
               </Col>
               <Col span={12}>
                 {chartData.health_score_radar && chartData.health_score_radar.length > 0 && (
-                  <Card title="健康评分雷达图" style={{ marginBottom: 16 }}>
+                  <Card title="🏥 健康评分雷达图" style={{ marginBottom: 16 }}>
                     <ResponsiveContainer width="100%" height={300}>
                       <RadarChart data={chartData.health_score_radar}>
                         <PolarGrid />
                         <PolarAngleAxis dataKey="dimension" />
-                        <PolarRadiusAxis angle={90} domain={[0, 25]} />
+                        <PolarRadiusAxis angle={90} domain={[0, 100]} />
                         <Radar name="得分" dataKey="score" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
                         <Tooltip />
+                        <Legend />
                       </RadarChart>
                     </ResponsiveContainer>
                   </Card>
@@ -143,10 +145,50 @@ const ReportRenderer = ({ content }) => {
               </Col>
             </Row>
 
+            {/* 第二行: 趋势图表(如果有对比数据) */}
+            {chartData.asset_value_trend && chartData.asset_value_trend.length > 0 && (
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Card title="📈 资产价值趋势" style={{ marginBottom: 16 }}>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={chartData.asset_value_trend}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="period" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => `¥${value.toLocaleString()}`} />
+                        <Legend />
+                        <Line type="monotone" dataKey="固定资产" stroke="#8884d8" strokeWidth={2} />
+                        <Line type="monotone" dataKey="虚拟资产" stroke="#82ca9d" strokeWidth={2} />
+                        <Line type="monotone" dataKey="总资产" stroke="#ffc658" strokeWidth={3} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </Col>
+                <Col span={12}>
+                  {chartData.utilization_comparison && (
+                    <Card title="⚡ 利用率对比" style={{ marginBottom: 16 }}>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={chartData.utilization_comparison}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="period" />
+                          <YAxis />
+                          <Tooltip formatter={(value) => `${value}%`} />
+                          <Legend />
+                          <Bar dataKey="利用率" fill="#52c41a" />
+                          <Bar dataKey="浪费率" fill="#ff4d4f" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Card>
+                  )}
+                </Col>
+              </Row>
+            )}
+
+            {/* 第三行: 固定资产分析 */}
             <Row gutter={16}>
-              <Col span={24}>
+              <Col span={12}>
                 {chartData.fixed_asset_categories && chartData.fixed_asset_categories.length > 0 && (
-                  <Card title="固定资产分类分布" style={{ marginBottom: 16 }}>
+                  <Card title="🏠 固定资产分类分布" style={{ marginBottom: 16 }}>
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={chartData.fixed_asset_categories}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -154,18 +196,71 @@ const ReportRenderer = ({ content }) => {
                         <YAxis />
                         <Tooltip formatter={(value) => `¥${value.toLocaleString()}`} />
                         <Legend />
-                        <Bar dataKey="value" fill="#8884d8" name="资产价值" />
+                        <Bar dataKey="value" fill="#1890ff" name="当前价值" />
                       </BarChart>
+                    </ResponsiveContainer>
+                  </Card>
+                )}
+              </Col>
+              <Col span={12}>
+                {chartData.fixed_asset_status_pie && chartData.fixed_asset_status_pie.length > 0 && (
+                  <Card title="📊 固定资产状态分布" style={{ marginBottom: 16 }}>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={chartData.fixed_asset_status_pie}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, value }) => `${name}: ${value}项`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {chartData.fixed_asset_status_pie.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
                     </ResponsiveContainer>
                   </Card>
                 )}
               </Col>
             </Row>
 
+            {/* 第四行: 虚拟资产分析 */}
             <Row gutter={16}>
-              <Col span={24}>
+              <Col span={12}>
+                {chartData.virtual_asset_status && chartData.virtual_asset_status.length > 0 && (
+                  <Card title="💎 虚拟资产状态分布" style={{ marginBottom: 16 }}>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={chartData.virtual_asset_status}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, value }) => `${name}: ${value}个`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {chartData.virtual_asset_status.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </Card>
+                )}
+              </Col>
+              <Col span={12}>
                 {chartData.virtual_asset_utilization && chartData.virtual_asset_utilization.length > 0 && (
-                  <Card title="虚拟资产利用率分析" style={{ marginBottom: 16 }}>
+                  <Card title="📊 虚拟资产利用率分析" style={{ marginBottom: 16 }}>
                     <Table 
                       dataSource={chartData.virtual_asset_utilization} 
                       columns={[
@@ -207,6 +302,53 @@ const ReportRenderer = ({ content }) => {
                 )}
               </Col>
             </Row>
+
+            {/* 第五行: 收入分析 */}
+            {chartData.income_structure_pie && chartData.income_structure_pie.length > 0 && (
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Card title="💵 收入结构分布" style={{ marginBottom: 16 }}>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={chartData.income_structure_pie}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ source, percent }) => `${source}: ${(percent * 100).toFixed(1)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="amount"
+                          nameKey="source"
+                        >
+                          {chartData.income_structure_pie.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => `¥${value.toLocaleString()}`} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </Col>
+                <Col span={12}>
+                  {chartData.income_comparison && (
+                    <Card title="💰 收入对比" style={{ marginBottom: 16 }}>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={chartData.income_comparison}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="period" />
+                          <YAxis />
+                          <Tooltip formatter={(value) => `¥${value.toLocaleString()}`} />
+                          <Legend />
+                          <Bar dataKey="income" fill="#52c41a" name="收入" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Card>
+                  )}
+                </Col>
+              </Row>
+            )}
           </>
         )}
       </div>

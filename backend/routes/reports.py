@@ -4,7 +4,7 @@ from models.user import User
 from models.ai_report import AIReport
 from database import db
 from datetime import datetime, timedelta, date
-from services.zhipu_ai_service_new import ZhipuAIService as ZhipuAiService
+from services.zhipu_service import ZhipuAiService
 import json
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -39,48 +39,32 @@ def _generate_report_async(report_id, user_id, api_key, model, report_type, star
             
             # 根据类型生成报告
             if report_type == 'weekly':
-                result = service.generate_weekly_report(user_id, start_date, end_date)
+                content = service.generate_weekly_report(user_id, start_date, end_date)
             elif report_type == 'monthly':
-                result = service.generate_monthly_report(user_id, start_date, end_date)
+                content = service.generate_monthly_report(user_id, start_date, end_date)
             elif report_type == 'yearly':
-                result = service.generate_custom_report(user_id, start_date, end_date, focus_areas or ['年度资产增长趋势', '年度收益表现', '资产配置优化'])
+                content = service.generate_custom_report(user_id, start_date, end_date, focus_areas or ['年度资产增长趋势', '年度收益表现', '资产配置优化'])
             else:  # custom
-                result = service.generate_custom_report(user_id, start_date, end_date, focus_areas or [])
+                content = service.generate_custom_report(user_id, start_date, end_date, focus_areas or [])
             
-            # 处理返回结果(新服务返回dict,旧服务返回JSON字符串)
-            if isinstance(result, dict):
-                # 新服务返回dict
-                content_json = result
-                # 转换为JSON字符串存储到数据库
-                content = json.dumps(result, ensure_ascii=False)
-            else:
-                # 旧服务返回JSON字符串
-                content = result
-                content_json = json.loads(content)
-            
-            # 提取摘要
+            # 解析内容提取摘要
             try:
-                # 新格式：从content字段提取前200字符
-                if 'content' in content_json and isinstance(content_json['content'], str):
-                    # Markdown格式报告,提取前200字符
-                    markdown_content = content_json['content']
-                    # 移除markdown标记,只保留纯文本
-                    clean_text = markdown_content.replace('#', '').replace('*', '').replace('_', '')
-                    summary = clean_text[:200].strip()
-                # executive_summary 是对象
-                elif 'executive_summary' in content_json:
+                content_json = json.loads(content)
+                # 新格式：executive_summary 是对象
+                if 'executive_summary' in content_json:
                     exec_summary = content_json['executive_summary']
                     if isinstance(exec_summary, dict):
+                        # 提取content字段作为摘要
                         summary = exec_summary.get('content', exec_summary.get('title', '报告已生成'))
                     else:
                         summary = str(exec_summary)
-                # period_summary 是字符串
+                # 旧格式：period_summary 是字符串
                 elif 'period_summary' in content_json:
                     summary = str(content_json['period_summary'])
                 else:
                     summary = "报告已生成"
                 
-                # 确保summary是字符串,限制长度
+                # 确保summary是字符串，限制长度
                 summary = str(summary)[:500] if summary else "报告已生成"
             except Exception as e:
                 print(f"[摘要提取失败] {e}")
@@ -89,7 +73,6 @@ def _generate_report_async(report_id, user_id, api_key, model, report_type, star
             # 更新报告状态
             report = AIReport.query.get(report_id)
             if report:
-                # content必须是字符串(JSON格式)
                 report.content = content
                 report.summary = summary
                 report.status = 'completed'
