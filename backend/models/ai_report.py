@@ -9,7 +9,7 @@ class AIReport(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     # 报告基本信息
-    report_type = db.Column(db.String(20), nullable=False)  # weekly, monthly, custom
+    report_type = db.Column(db.String(20), nullable=False)  # weekly, monthly, yearly, custom
     title = db.Column(db.String(200), nullable=False)  # 报告标题
     
     # 时间范围
@@ -40,6 +40,7 @@ class AIReport(db.Model):
         type_map = {
             'weekly': '周报',
             'monthly': '月报',
+            'yearly': '年报',
             'custom': '自定义报告'
         }
         return type_map.get(self.report_type, '未知')

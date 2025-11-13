@@ -33,6 +33,7 @@ class User(db.Model):
     
     # AI服务商API配置（加密存储）
     zhipu_api_key_encrypted = db.Column(db.Text)  # 智谱AI API Key
+    zhipu_model = db.Column(db.String(50), default='glm-4-flash')  # 智谱AI模型
     
     # 兼容旧字段（可以后续删除）
     aliyun_api_token_encrypted = db.Column(db.Text)  # 废弃，使用zhipu_api_key_encrypted

@@ -4,10 +4,123 @@ from models.user import User
 from models.ai_report import AIReport
 from database import db
 from datetime import datetime, timedelta, date
-from services.zhipu_service import ZhipuAiService
+from services.zhipu_ai_service_new import ZhipuAIService as ZhipuAiService
 import json
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 reports_bp = Blueprint('reports', __name__)
+
+# 创建线程池用于并发生成报告（最多5个并发任务）
+executor = ThreadPoolExecutor(max_workers=5, thread_name_prefix='report_gen')
+
+def _generate_report_async(report_id, user_id, api_key, model, report_type, start_date, end_date, focus_areas=None):
+    """异步生成报告的后台任务"""
+    # 使用Flask应用上下文
+    from flask import current_app
+    from app import create_app
+    
+    # 创建应用上下文
+    app = create_app()
+    
+    with app.app_context():
+        try:
+            print(f"\n{'='*80}")
+            print(f"[并发报告生成] 开始处理 - 报告ID: {report_id}")
+            print(f"- 用户ID: {user_id}")
+            print(f"- 报告类型: {report_type}")
+            print(f"- 时间范围: {start_date} 至 {end_date}")
+            print(f"- 模型: {model}")
+            print(f"- 线程: {threading.current_thread().name}")
+            print(f"{'='*80}\n")
+            
+            # 创建AI服务
+            service = ZhipuAiService(api_key, model=model)
+            
+            # 根据类型生成报告
+            if report_type == 'weekly':
+                result = service.generate_weekly_report(user_id, start_date, end_date)
+            elif report_type == 'monthly':
+                result = service.generate_monthly_report(user_id, start_date, end_date)
+            elif report_type == 'yearly':
+                result = service.generate_custom_report(user_id, start_date, end_date, focus_areas or ['年度资产增长趋势', '年度收益表现', '资产配置优化'])
+            else:  # custom
+                result = service.generate_custom_report(user_id, start_date, end_date, focus_areas or [])
+            
+            # 处理返回结果(新服务返回dict,旧服务返回JSON字符串)
+            if isinstance(result, dict):
+                # 新服务返回dict
+                content_json = result
+                # 转换为JSON字符串存储到数据库
+                content = json.dumps(result, ensure_ascii=False)
+            else:
+                # 旧服务返回JSON字符串
+                content = result
+                content_json = json.loads(content)
+            
+            # 提取摘要
+            try:
+                # 新格式：从content字段提取前200字符
+                if 'content' in content_json and isinstance(content_json['content'], str):
+                    # Markdown格式报告,提取前200字符
+                    markdown_content = content_json['content']
+                    # 移除markdown标记,只保留纯文本
+                    clean_text = markdown_content.replace('#', '').replace('*', '').replace('_', '')
+                    summary = clean_text[:200].strip()
+                # executive_summary 是对象
+                elif 'executive_summary' in content_json:
+                    exec_summary = content_json['executive_summary']
+                    if isinstance(exec_summary, dict):
+                        summary = exec_summary.get('content', exec_summary.get('title', '报告已生成'))
+                    else:
+                        summary = str(exec_summary)
+                # period_summary 是字符串
+                elif 'period_summary' in content_json:
+                    summary = str(content_json['period_summary'])
+                else:
+                    summary = "报告已生成"
+                
+                # 确保summary是字符串,限制长度
+                summary = str(summary)[:500] if summary else "报告已生成"
+            except Exception as e:
+                print(f"[摘要提取失败] {e}")
+                summary = "报告已生成"
+            
+            # 更新报告状态
+            report = AIReport.query.get(report_id)
+            if report:
+                # content必须是字符串(JSON格式)
+                report.content = content
+                report.summary = summary
+                report.status = 'completed'
+                report.generated_at = datetime.utcnow()
+                db.session.commit()
+                
+                print(f"\n[并发报告生成] ✅ 成功 - 报告ID: {report_id}")
+                print(f"- 摘要: {summary[:50]}...")
+                print(f"- 生成时间: {report.generated_at}\n")
+            else:
+                print(f"\n[并发报告生成] ⚠️ 报告不存在 - 报告ID: {report_id}\n")
+                
+        except Exception as e:
+            # 处理错误
+            import traceback
+            error_details = traceback.format_exc()
+            
+            print(f"\n[并发报告生成] ❌ 失败 - 报告ID: {report_id}")
+            print(f"- 错误类型: {type(e).__name__}")
+            print(f"- 错误信息: {str(e)}")
+            print(f"- 详细堆栈:\n{error_details}")
+            print("=" * 50 + "\n")
+            
+            try:
+                report = AIReport.query.get(report_id)
+                if report:
+                    report.status = 'failed'
+                    report.error_message = str(e)
+                    db.session.commit()
+            except Exception as db_error:
+                print(f"[并发报告生成] 数据库更新失败: {str(db_error)}")
 
 def get_current_user():
     """获取当前用户"""
@@ -17,7 +130,7 @@ def get_current_user():
 @reports_bp.route('/reports/token', methods=['POST'])
 @jwt_required()
 def save_api_token():
-    """保存用户的AI API Key（仅支持智谱AI）"""
+    """保存用户的AI API Key和模型配置（仅支持智谱AI）"""
     try:
         user = get_current_user()
         if not user:
@@ -28,6 +141,7 @@ def save_api_token():
         
         data = request.get_json()
         api_key = data.get('api_key', '').strip()
+        model = data.get('model', 'glm-4-flash').strip()  # 获取模型配置
         
         if not api_key:
             return jsonify({
@@ -37,11 +151,13 @@ def save_api_token():
         
         # 加密保存API Key
         user.set_ai_api_key(api_key)
+        # 保存模型配置
+        user.zhipu_model = model
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'message': '智谱AI API Key保存成功'
+            'message': f'智谱AI API Key和模型配置保存成功（{model}）'
         }), 200
         
     except Exception as e:
@@ -81,7 +197,8 @@ def check_api_token():
                 'has_token': has_token,
                 'provider': 'zhipu',
                 'provider_name': '智谱AI',
-                'masked_key': masked_key
+                'masked_key': masked_key,
+                'model': user.zhipu_model or 'glm-4-flash'  # 返回模型配置
             }
         }), 200
         
@@ -163,23 +280,51 @@ def generate_report():
             }), 400
         
         data = request.get_json()
-        report_type = data.get('report_type', 'custom')  # weekly, monthly, custom
+        report_type = data.get('report_type', 'custom')  # weekly, monthly, yearly, custom
         
         # 确定时间范围
         today = date.today()
         
         if report_type == 'weekly':
-            # 本周：周一到今天
-            start_date = today - timedelta(days=today.weekday())
-            end_date = today
-            title = f"资产周报 ({start_date.strftime('%Y年%m月%d日')} - {end_date.strftime('%m月%d日')})"
+            # 周报：支持选择具体某一周
+            year = data.get('year', today.year)
+            week = data.get('week', today.isocalendar()[1])  # ISO周数
+            
+            # 计算该周的开始和结束日期
+            # ISO 8601: 周一为一周的第一天
+            jan_4 = date(year, 1, 4)  # 第一周总是包含1月4日
+            week_1_monday = jan_4 - timedelta(days=jan_4.weekday())
+            start_date = week_1_monday + timedelta(weeks=week-1)
+            end_date = start_date + timedelta(days=6)
+            
+            title = f"资产周报 ({year}年第{week}周: {start_date.strftime('%Y年%m月%d日')} - {end_date.strftime('%m月%d日')})"
+            
         elif report_type == 'monthly':
-            # 本月：1号到今天
-            start_date = date(today.year, today.month, 1)
-            end_date = today
-            title = f"资产月报 ({today.year}年{today.month}月)"
+            # 月报：支持选择具体某个月
+            year = data.get('year', today.year)
+            month = data.get('month', today.month)
+            
+            # 计算该月的开始和结束日期
+            start_date = date(year, month, 1)
+            # 下个月的1号再减1天
+            if month == 12:
+                end_date = date(year + 1, 1, 1) - timedelta(days=1)
+            else:
+                end_date = date(year, month + 1, 1) - timedelta(days=1)
+            
+            title = f"资产月报 ({year}年{month}月)"
+            
+        elif report_type == 'yearly':
+            # 年报：支持选择具体某一年
+            year = data.get('year', today.year)
+            
+            start_date = date(year, 1, 1)
+            end_date = date(year, 12, 31)
+            
+            title = f"资产年报 ({year}年)"
+            
         else:
-            # 自定义时间范围
+            # 自定义时间范围：支持任意时间段
             start_date_str = data.get('start_date')
             end_date_str = data.get('end_date')
             
@@ -205,70 +350,30 @@ def generate_report():
         db.session.add(report)
         db.session.commit()
         
-        # 调用AI服务生成报告
-        try:
-            print(f"\n{'='*80}")
-            print(f"[报告生成请求] 开始处理")
-            print(f"- 用户ID: {user.id}")
-            print(f"- 报告类型: {report_type}")
-            print(f"- 时间范围: {start_date} 至 {end_date}")
-            print(f"- API Key存在: {api_key is not None}")
-            print(f"- API Key长度: {len(api_key) if api_key else 0}")
-            print(f"{'='*80}\n")
-            
-            service = ZhipuAiService(api_key)
-            
-            if report_type == 'weekly':
-                content = service.generate_weekly_report(user.id, start_date, end_date)
-            elif report_type == 'monthly':
-                content = service.generate_monthly_report(user.id, start_date, end_date)
-            else:
-                focus_areas = data.get('focus_areas', [])
-                content = service.generate_custom_report(user.id, start_date, end_date, focus_areas)
-            
-            # 解析内容提取摘要
-            try:
-                content_json = json.loads(content)
-                if 'executive_summary' in content_json:
-                    summary = content_json['executive_summary']
-                elif 'period_summary' in content_json:
-                    summary = content_json['period_summary']
-                else:
-                    summary = "报告已生成"
-            except:
-                summary = "报告已生成"
-            
-            # 更新报告状态
-            report.content = content
-            report.summary = summary
-            report.status = 'completed'
-            report.generated_at = datetime.utcnow()
-            db.session.commit()
-            
-            return jsonify({
-                'success': True,
-                'message': '报告生成成功',
-                'data': report.to_dict()
-            }), 201
-            
-        except Exception as api_error:
-            # API调用失败
-            import traceback
-            error_details = traceback.format_exc()
-            print(f"\n=== 报告生成API错误 ===")
-            print(f"错误类型: {type(api_error).__name__}")
-            print(f"错误信息: {str(api_error)}")
-            print(f"详细堆栈:\n{error_details}")
-            print("=" * 50)
-            
-            report.status = 'failed'
-            report.error_message = str(api_error)
-            db.session.commit()
-            
-            return jsonify({
-                'success': False,
-                'message': f'报告生成失败：{str(api_error)}'
-            }), 500
+        # 获取focus_areas（如果有）
+        focus_areas = data.get('focus_areas', None)
+        
+        # 提交异步任务到线程池
+        executor.submit(
+            _generate_report_async,
+            report.id,
+            user.id,
+            api_key,
+            user.zhipu_model or 'glm-4-flash',
+            report_type,
+            start_date,
+            end_date,
+            focus_areas
+        )
+        
+        print(f"\n[并发报告] 报告任务已提交 - 报告ID: {report.id}, 类型: {report_type}")
+        
+        # 立即返回201，不等待生成完成
+        return jsonify({
+            'success': True,
+            'message': '报告生成任务已提交，正在后台处理',
+            'data': report.to_dict()
+        }), 201
         
     except Exception as e:
         db.session.rollback()

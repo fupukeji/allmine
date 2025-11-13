@@ -17,7 +17,8 @@ import {
   Col,
   Statistic,
   Alert,
-  Spin
+  Spin,
+  InputNumber
 } from 'antd';
 import {
   FileTextOutlined,
@@ -33,7 +34,11 @@ import {
 } from '@ant-design/icons';
 import request from '../utils/request';
 import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek'; // 引入ISO周插件
 import ReportRenderer from '../components/ReportRenderer'; // 引入增强渲染器
+
+// 扩展dayjs支持ISO周
+dayjs.extend(isoWeek);
 
 const { Title, Paragraph, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -42,6 +47,7 @@ const { Option } = Select;
 
 const AIReports = () => {
   const [reports, setReports] = useState([]);
+  const [filteredReports, setFilteredReports] = useState([]); // 筛选后的报告
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
   const [hasToken, setHasToken] = useState(false);
@@ -52,9 +58,14 @@ const AIReports = () => {
   const [currentReport, setCurrentReport] = useState(null);
   const [form] = Form.useForm();
   const [tokenForm] = Form.useForm();
-  const [autoRefreshTimer, setAutoRefreshTimer] = useState(null); // 自动刷新定时器
-  const [showFullKey, setShowFullKey] = useState(false); // 是否显示完整Key
-  const [fullKey, setFullKey] = useState(''); // 完整的Key
+  const [autoRefreshTimer, setAutoRefreshTimer] = useState(null);
+  const [showFullKey, setShowFullKey] = useState(false);
+  const [fullKey, setFullKey] = useState('');
+  const [selectedModel, setSelectedModel] = useState('glm-4.5-flash');
+  
+  // 搜索相关状态
+  const [searchText, setSearchText] = useState(''); // 搜索文本
+  const [searchType, setSearchType] = useState('all'); // 搜索类型筛选
 
   // 加载数据
   useEffect(() => {
@@ -106,6 +117,7 @@ const AIReports = () => {
       const response = await request.get('/reports');
       if (response.success) {
         setReports(response.data.reports);
+        setFilteredReports(response.data.reports); // 初始化筛选列表
       }
     } catch (error) {
       message.error('加载报告列表失败');
@@ -114,14 +126,46 @@ const AIReports = () => {
     }
   };
 
+  // 搜索和筛选功能
+  const handleSearch = (value) => {
+    setSearchText(value);
+    filterReports(value, searchType);
+  };
+
+  const handleTypeFilter = (value) => {
+    setSearchType(value);
+    filterReports(searchText, value);
+  };
+
+  const filterReports = (text, type) => {
+    let filtered = reports;
+
+    // 按类型筛选
+    if (type !== 'all') {
+      filtered = filtered.filter(report => report.report_type === type);
+    }
+
+    // 按文本搜索（搜索标题和摘要）
+    if (text) {
+      const lowerText = text.toLowerCase();
+      filtered = filtered.filter(report => 
+        (report.title && report.title.toLowerCase().includes(lowerText)) ||
+        (report.summary && report.summary.toLowerCase().includes(lowerText))
+      );
+    }
+
+    setFilteredReports(filtered);
+  };
+
   // 保存API Key
   const handleSaveToken = async (values) => {
     try {
       const response = await request.post('/reports/token', {
-        api_key: values.api_key
+        api_key: values.api_key,
+        model: values.model || 'glm-4-flash'  // 保存选中的模型
       });
       if (response.success) {
-        message.success('API Key保存成功');
+        message.success('API Key和模型配置保存成功');
         setTokenModalVisible(false);
         tokenForm.resetFields();
         setShowFullKey(false);
@@ -190,7 +234,19 @@ const AIReports = () => {
         report_type: values.report_type
       };
 
-      if (values.report_type === 'custom') {
+      // 根据报告类型构建参数
+      if (values.report_type === 'weekly') {
+        payload.year = values.year || dayjs().year();
+        payload.week = values.week || dayjs().isoWeek();
+      } else if (values.report_type === 'monthly') {
+        payload.year = values.year || dayjs().year();
+        payload.month = values.month || dayjs().month() + 1;
+      } else if (values.report_type === 'yearly') {
+        payload.year = values.year || dayjs().year();
+        if (values.focus_areas) {
+          payload.focus_areas = values.focus_areas.split(',').map(s => s.trim());
+        }
+      } else if (values.report_type === 'custom') {
         payload.start_date = values.date_range[0].format('YYYY-MM-DD');
         payload.end_date = values.date_range[1].format('YYYY-MM-DD');
         if (values.focus_areas) {
@@ -198,85 +254,105 @@ const AIReports = () => {
         }
       }
 
-      // 立即关闭窗口
       setGenerateModalVisible(false);
       form.resetFields();
       
-      // 显示提示，告诉用户报告正在生成
-      const hideLoading = message.loading('报告生成中，请稍候...', 0);
+      const hideLoading = message.loading('报告生成任务已提交，正在后台处理...', 0);
       
-      // 先清除之前的定时器
-      if (autoRefreshTimer) {
-        clearInterval(autoRefreshTimer);
-      }
+      // 发送生成请求（异步，立即返回）
+      const response = await request.post('/reports/generate', payload);
       
-      // 启动定时刷新（每3秒刷新一次）
-      let refreshCount = 0;
-      const maxRefreshCount = 10; // 最多刷新30秒（10次 x 3秒）
-      
-      const timer = setInterval(async () => {
-        refreshCount++;
+      if (response.success) {
+        hideLoading();
+        const reportId = response.data.id;
+        message.success('报告生成任务已提交，正在后台处理...');
+        
+        // 立即刷新列表
         await loadReports();
         await loadStats();
         
-        // 达到最大刷新次数，停止刷新
-        if (refreshCount >= maxRefreshCount) {
-          clearInterval(timer);
+        // 清除之前的定时器
+        if (autoRefreshTimer) {
+          clearInterval(autoRefreshTimer);
           setAutoRefreshTimer(null);
-          hideLoading();
-          message.info('已停止自动刷新，请手动查看报告');
         }
-      }, 3000); // 每3秒刷新一次
-      
-      setAutoRefreshTimer(timer);
-
-      // 发送生成请求（异步，不等待结果）
-      request.post('/reports/generate', payload).then(response => {
-        if (response.success) {
-          // 成功后立即停止刷新
-          if (timer) {
-            clearInterval(timer);
-            setAutoRefreshTimer(null);
+        
+        // 启动轮询：每3秒检查报告状态
+        let checkCount = 0;
+        const maxCheckCount = 100; // 最多轮询5分钟 (100次 x 3秒)
+        let timer = null; // 在外部声明
+        
+        const pollReport = async () => {
+          try {
+            const reportResponse = await request.get(`/reports/${reportId}`);
+            console.log('轮询报告状态:', reportResponse); // 调试日志
+            
+            if (reportResponse.success) {
+              const report = reportResponse.data;
+              console.log('报告状态:', report.status, '报告ID:', reportId); // 调试
+              
+              if (report.status === 'completed') {
+                // 生成成功
+                console.log('✅ 报告生成完成，停止轮询');
+                if (timer) {
+                  clearInterval(timer);
+                }
+                setAutoRefreshTimer(null);
+                message.success('报告生成成功！');
+                await loadReports();
+                await loadStats();
+                return; // 立即退出
+              } else if (report.status === 'failed') {
+                // 生成失败
+                console.log('❌ 报告生成失败，停止轮询');
+                if (timer) {
+                  clearInterval(timer);
+                }
+                setAutoRefreshTimer(null);
+                message.error(`报告生成失败：${report.error_message || '未知错误'}`);
+                await loadReports();
+                return; // 立即退出
+              } else {
+                console.log('🔄 报告仍在生成中...', `第${checkCount + 1}次轮询`);
+              }
+            }
+          } catch (error) {
+            console.error('轮询报告状态失败:', error);
           }
-          hideLoading();
-          message.success('报告生成成功！');
-          // 立即刷新一次
-          loadReports();
-          loadStats();
-        }
-      }).catch(error => {
-        // 错误后也停止刷新
-        if (timer) {
-          clearInterval(timer);
-          setAutoRefreshTimer(null);
-        }
-        hideLoading();
+          
+          checkCount++;
+          if (checkCount >= maxCheckCount) {
+            console.log('⚠️ 轮询超时，停止轮询');
+            if (timer) {
+              clearInterval(timer);
+            }
+            setAutoRefreshTimer(null);
+            message.warning('轮询超时，请手动刷新查看报告状态');
+          }
+        };
         
-        // 如果是超时错误，不显示，因为后台仍在处理
-        if (error.code === 'ECONNABORTED') {
-          message.warning('请求超时，但报告正在后台生成，请稍后查看...');
-          return; // 不显示错误
-        }
+        timer = setInterval(pollReport, 3000); // 每3秒轮询一次
+        setAutoRefreshTimer(timer);
         
-        console.error('报告生成错误:', error);
-        
-        // 如果是API Token配置问题，提示用户配置
-        if (error.response?.status === 400 && error.response?.data?.message?.includes('API')) {
-          Modal.confirm({
-            title: '未配置API Key',
-            content: '请先配置AI API Key才能生成智能报告',
-            okText: '立即配置',
-            cancelText: '取消',
-            onOk: () => setTokenModalVisible(true)
-          });
-        } else {
-          message.error('报告生成失败：' + (error.response?.data?.message || error.message || '未知错误'));
-        }
-      });
+        // 立即执行第一次轮询
+        pollReport();
+      }
       
     } catch (error) {
       console.error('提交报告生成请求失败:', error);
-      message.error('提交失败，请重试');
+      
+      // 如果是API Token配置问题
+      if (error.response?.status === 400 && error.response?.data?.message?.includes('API')) {
+        Modal.confirm({
+          title: '未配置API Key',
+          content: '请先配置AI API Key才能生成智能报告',
+          okText: '立即配置',
+          cancelText: '取消',
+          onOk: () => setTokenModalVisible(true)
+        });
+      } else {
+        message.error('提交失败：' + (error.response?.data?.message || error.message || '请重试'));
+      }
     }
   };
 
@@ -320,7 +396,13 @@ const AIReports = () => {
     try {
       const content = typeof report.content === 'string' ? JSON.parse(report.content) : report.content;
       
-      // 使用增强渲染器（支持结构化、表格、图表）
+      // 判断是否为Markdown/Text格式
+      if (content.report_type === 'markdown' || content.report_type === 'text') {
+        // 传递完整的content对象,包含markdown内容和图表数据
+        return <ReportRenderer content={content} />;
+      }
+      
+      // 传统JSON结构
       return <ReportRenderer content={content} />;
 
     } catch (error) {
@@ -340,11 +422,19 @@ const AIReports = () => {
       title: '类型',
       dataIndex: 'report_type_text',
       key: 'report_type',
-      render: (text, record) => (
-        <Tag color={record.report_type === 'weekly' ? 'blue' : record.report_type === 'monthly' ? 'green' : 'purple'}>
-          {text}
-        </Tag>
-      ),
+      render: (text, record) => {
+        const colorMap = {
+          weekly: 'blue',
+          monthly: 'green',
+          yearly: 'orange',
+          custom: 'purple'
+        };
+        return (
+          <Tag color={colorMap[record.report_type] || 'default'}>
+            {text}
+          </Tag>
+        );
+      },
     },
     {
       title: '时间范围',
@@ -459,7 +549,7 @@ const AIReports = () => {
           <Col span={6}>
             <Card>
               <Statistic
-                title="自定义报告"
+                title="自定义/年报"
                 value={stats.by_type.custom}
                 valueStyle={{ color: '#722ed1' }}
               />
@@ -469,7 +559,7 @@ const AIReports = () => {
       )}
 
       {/* 操作按钮 */}
-      <Space style={{ marginBottom: 16 }}>
+      <Space style={{ marginBottom: 16 }} wrap>
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -484,12 +574,42 @@ const AIReports = () => {
         <Button icon={<SettingOutlined />} onClick={() => setTokenModalVisible(true)}>
           配置API Key
         </Button>
+        
+        {/* 搜索栏 */}
+        <Input.Search
+          placeholder="搜索报告标题或摘要..."
+          allowClear
+          style={{ width: 300 }}
+          value={searchText}
+          onChange={(e) => handleSearch(e.target.value)}
+          onSearch={handleSearch}
+        />
+        
+        {/* 类型筛选 */}
+        <Select
+          style={{ width: 150 }}
+          value={searchType}
+          onChange={handleTypeFilter}
+          placeholder="筛选类型"
+        >
+          <Option value="all">全部类型</Option>
+          <Option value="weekly">周报</Option>
+          <Option value="monthly">月报</Option>
+          <Option value="yearly">年报</Option>
+          <Option value="custom">自定义</Option>
+        </Select>
+        
+        {/* 显示筛选结果 */}
+        <Text type="secondary">
+          共 {filteredReports.length} 条结果
+          {searchText || searchType !== 'all' ? ` (已筛选)` : ''}
+        </Text>
       </Space>
 
       {/* 报告列表 */}
       <Card>
         <Table
-          dataSource={reports}
+          dataSource={filteredReports}
           columns={columns}
           rowKey="id"
           loading={loading}
@@ -568,13 +688,94 @@ const AIReports = () => {
           />
           
           <Form.Item
+            label="选择模型"
+            name="model"
+            initialValue="glm-4-flash"
+            rules={[{ required: true, message: '请选择模型' }]}
+          >
+            <Select placeholder="请选择AI模型" size="large">
+              <Option value="glm-4-flash">
+                <div style={{ padding: '4px 0' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-Flash (推荐⭐)</div>
+                  <div style={{ fontSize: 12, color: '#52c41a', marginTop: 2 }}>
+                    完全免费 | 高速响应 | 1000次/分
+                  </div>
+                </div>
+              </Option>
+              
+              <Option value="glm-z1-flash">
+                <div style={{ padding: '4px 0' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-Z1-Flash</div>
+                  <div style={{ fontSize: 12, color: '#52c41a', marginTop: 2 }}>
+                    完全免费 | 推理增强 | 40次/分
+                  </div>
+                </div>
+              </Option>
+              
+              <Option value="glm-4-air">
+                <div style={{ padding: '4px 0' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-Air</div>
+                  <div style={{ fontSize: 12, color: '#1890ff', marginTop: 2 }}>
+                    超低成本 0.0005元/千Tokens | 200次/分
+                  </div>
+                </div>
+              </Option>
+              
+              <Option value="glm-4-airx">
+                <div style={{ padding: '4px 0' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-AirX</div>
+                  <div style={{ fontSize: 12, color: '#1890ff', marginTop: 2 }}>
+                    超轻量 0.01元/千Tokens | 30次/分
+                  </div>
+                </div>
+              </Option>
+              
+              <Option value="glm-4-flashx">
+                <div style={{ padding: '4px 0' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-FlashX</div>
+                  <div style={{ fontSize: 12, color: '#1890ff', marginTop: 2 }}>
+                    极低成本 0.0001元/千Tokens | 100次/分
+                  </div>
+                </div>
+              </Option>
+              
+              <Option value="glm-4-plus">
+                <div style={{ padding: '4px 0' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-Plus</div>
+                  <div style={{ fontSize: 12, color: '#fa8c16', marginTop: 2 }}>
+                    增强版 0.005元/千Tokens | 50次/分
+                  </div>
+                </div>
+              </Option>
+              
+              <Option value="glm-4-long">
+                <div style={{ padding: '4px 0' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-Long</div>
+                  <div style={{ fontSize: 12, color: '#1890ff', marginTop: 2 }}>
+                    长文本 0.001元/千Tokens | 30次/分
+                  </div>
+                </div>
+              </Option>
+              
+              <Option value="glm-4">
+                <div style={{ padding: '4px 0' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4</div>
+                  <div style={{ fontSize: 12, color: '#fa8c16', marginTop: 2 }}>
+                    通用版 0.1元/千Tokens | 50次/分
+                  </div>
+                </div>
+              </Option>
+            </Select>
+          </Form.Item>
+          
+          <Form.Item
             label="API Key"
             name="api_key"
             rules={[{ required: true, message: '请输入API Key' }]}
           >
-            <TextArea 
-              rows={4} 
+            <Input 
               placeholder="请粘贴您的智谱AI API Key"
+              size="large"
             />
           </Form.Item>
           
@@ -610,8 +811,9 @@ const AIReports = () => {
             rules={[{ required: true, message: '请选择报告类型' }]}
           >
             <Select placeholder="请选择报告类型">
-              <Option value="weekly">周报（本周）</Option>
-              <Option value="monthly">月报（本月）</Option>
+              <Option value="weekly">周报</Option>
+              <Option value="monthly">月报</Option>
+              <Option value="yearly">年报</Option>
               <Option value="custom">自定义时间段</Option>
             </Select>
           </Form.Item>
@@ -620,26 +822,120 @@ const AIReports = () => {
             noStyle
             shouldUpdate={(prevValues, currentValues) => prevValues.report_type !== currentValues.report_type}
           >
-            {({ getFieldValue }) =>
-              getFieldValue('report_type') === 'custom' ? (
-                <>
-                  <Form.Item
-                    label="时间范围"
-                    name="date_range"
-                    rules={[{ required: true, message: '请选择时间范围' }]}
-                  >
-                    <RangePicker style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item
-                    label="关注领域（可选）"
-                    name="focus_areas"
-                    tooltip="多个领域用逗号分隔，如：资产配置,风险控制,收益分析"
-                  >
-                    <Input placeholder="例如：资产配置,风险控制,收益分析" />
-                  </Form.Item>
-                </>
-              ) : null
-            }
+            {({ getFieldValue }) => {
+              const reportType = getFieldValue('report_type');
+              
+              if (reportType === 'weekly') {
+                return (
+                  <>
+                    <Form.Item
+                      label="年份"
+                      name="year"
+                      initialValue={dayjs().year()}
+                    >
+                      <InputNumber 
+                        min={2020} 
+                        max={2099} 
+                        style={{ width: '100%' }}
+                        placeholder="请输入年份"
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      label="周数"
+                      name="week"
+                      initialValue={dayjs().isoWeek()}
+                      tooltip="ISO 8601周数，一年有约52-53周"
+                    >
+                      <InputNumber 
+                        min={1} 
+                        max={53} 
+                        style={{ width: '100%' }}
+                        placeholder="请输入周数 (1-53)"
+                      />
+                    </Form.Item>
+                  </>
+                );
+              }
+              
+              if (reportType === 'monthly') {
+                return (
+                  <>
+                    <Form.Item
+                      label="年份"
+                      name="year"
+                      initialValue={dayjs().year()}
+                    >
+                      <InputNumber 
+                        min={2020} 
+                        max={2099} 
+                        style={{ width: '100%' }}
+                        placeholder="请输入年份"
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      label="月份"
+                      name="month"
+                      initialValue={dayjs().month() + 1}
+                    >
+                      <Select placeholder="请选择月份">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => (
+                          <Option key={m} value={m}>{m}月</Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                  </>
+                );
+              }
+              
+              if (reportType === 'yearly') {
+                return (
+                  <>
+                    <Form.Item
+                      label="年份"
+                      name="year"
+                      initialValue={dayjs().year()}
+                    >
+                      <InputNumber 
+                        min={2020} 
+                        max={2099} 
+                        style={{ width: '100%' }}
+                        placeholder="请输入年份"
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      label="关注领域（可选）"
+                      name="focus_areas"
+                      tooltip="多个领域用逗号分隔，如：年度资产增长,收益分析"
+                    >
+                      <Input placeholder="例如：年度资产增长,收益分析,风险控制" />
+                    </Form.Item>
+                  </>
+                );
+              }
+              
+              if (reportType === 'custom') {
+                return (
+                  <>
+                    <Form.Item
+                      label="时间范围"
+                      name="date_range"
+                      rules={[{ required: true, message: '请选择时间范围' }]}
+                    >
+                      <RangePicker style={{ width: '100%' }} />
+                    </Form.Item>
+                    <Form.Item
+                      label="关注领域（可选）"
+                      name="focus_areas"
+                      tooltip="多个领域用逗号分隔，如：资产配置,风险控制,收益分析"
+                    >
+                      <Input placeholder="例如：资产配置,风险控制,收益分析" />
+                    </Form.Item>
+                  </>
+                );
+              }
+              
+              return null;
+            }}
           </Form.Item>
 
           <Form.Item>
@@ -667,7 +963,7 @@ const AIReports = () => {
         ]}
         width={1200}
         style={{ top: 20 }}
-        bodyStyle={{ maxHeight: '80vh', overflow: 'auto' }}
+        styles={{ body: { maxHeight: '80vh', overflow: 'auto' } }}
       >
         {currentReport && (
           <div>

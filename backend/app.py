@@ -83,6 +83,15 @@ def create_app():
                 if "duplicate column" not in str(e).lower():
                     print(f"zhipu_api_key_encrypted: {e}")
             
+            try:
+                db.session.execute(text("ALTER TABLE users ADD COLUMN zhipu_model VARCHAR(50) DEFAULT 'glm-4.5-flash'"))
+                db.session.commit()
+                print("Added zhipu_model column")
+            except Exception as e:
+                db.session.rollback()
+                if "duplicate column" not in str(e).lower():
+                    print(f"zhipu_model: {e}")
+            
             # 只创建表，不删除现有数据
             db.create_all()
             print("Debug: Tables created successfully")
