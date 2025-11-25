@@ -7,7 +7,9 @@ from datetime import datetime, timedelta, date
 from services.zhipu_service import ZhipuAiService
 import json
 import threading
+import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from workflows.service import get_workflow_service
 
 reports_bp = Blueprint('reports', __name__)
 
@@ -15,7 +17,7 @@ reports_bp = Blueprint('reports', __name__)
 executor = ThreadPoolExecutor(max_workers=5, thread_name_prefix='report_gen')
 
 def _generate_report_async(report_id, user_id, api_key, model, report_type, start_date, end_date, focus_areas=None):
-    """异步生成报告的后台任务"""
+    """异步生成报告的后台任务（使用LangGraph工作流）"""
     # 使用Flask应用上下文
     from flask import current_app
     from app import create_app
@@ -26,7 +28,7 @@ def _generate_report_async(report_id, user_id, api_key, model, report_type, star
     with app.app_context():
         try:
             print(f"\n{'='*80}")
-            print(f"[并发报告生成] 开始处理 - 报告ID: {report_id}")
+            print(f"[LangGraph工作流] 开始处理 - 报告ID: {report_id}")
             print(f"- 用户ID: {user_id}")
             print(f"- 报告类型: {report_type}")
             print(f"- 时间范围: {start_date} 至 {end_date}")
@@ -34,18 +36,77 @@ def _generate_report_async(report_id, user_id, api_key, model, report_type, star
             print(f"- 线程: {threading.current_thread().name}")
             print(f"{'='*80}\n")
             
-            # 创建AI服务
-            service = ZhipuAiService(api_key, model=model)
+            # 构建工作流任务上下文
+            task_context = {
+                "report_id": report_id,
+                "user_id": user_id,
+                "api_key": api_key,
+                "model": model,
+                "report_type": report_type,
+                "start_date": start_date,
+                "end_date": end_date,
+                "focus_areas": focus_areas or [],
+                "enable_ai_insights": False  # 禁用AI预分析以节省API调用
+            }
             
-            # 根据类型生成报告
-            if report_type == 'weekly':
-                content = service.generate_weekly_report(user_id, start_date, end_date)
-            elif report_type == 'monthly':
-                content = service.generate_monthly_report(user_id, start_date, end_date)
-            elif report_type == 'yearly':
-                content = service.generate_custom_report(user_id, start_date, end_date, focus_areas or ['年度资产增长趋势', '年度收益表现', '资产配置优化'])
-            else:  # custom
-                content = service.generate_custom_report(user_id, start_date, end_date, focus_areas or [])
+            # 获取工作流服务并执行
+            workflow_service = get_workflow_service()
+            
+            # 在新的事件循环中执行异步工作流
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                final_state = loop.run_until_complete(
+                    workflow_service.execute_workflow(task_context)
+                )
+            finally:
+                loop.close()
+            
+            # 从final_state中提取报告内容
+            content = final_state.get('report_content')
+            
+            # 检查执行路径最后一个节点是否是失败节点
+            execution_path = final_state.get('execution_path', [])
+            last_node = execution_path[-1]['node'] if execution_path else None
+            
+            # 如果最后一个节点是handle_failure，说明工作流失败了
+            if last_node == 'handle_failure':
+                # 确保error_message存在
+                if not final_state.get('error_message'):
+                    final_state['error_message'] = '报告生成失败，已达最大重试次数'
+                
+                error_msg = final_state['error_message']
+                print(f"\n[LangGraph工作流] ❌ 失败 - 报告ID: {report_id}")
+                print(f"- 错误: {error_msg}\n")
+                
+                # 注意：handle_failure_node已经保存了状态和工作流轨迹，不需要重复保存
+                return
+            
+            # 检查是否有错误或内容为空
+            if final_state.get('error_message') or not content:
+                error_msg = final_state.get('error_message', '报告生成失败')
+                print(f"\n[LangGraph工作流] ❌ 失败 - 报告ID: {report_id}")
+                print(f"- 错误: {error_msg}\n")
+                
+                # 更新报告状态为失败
+                report = AIReport.query.get(report_id)
+                if report:
+                    report.status = 'failed'
+                    report.error_message = error_msg
+                    # 保存工作流轨迹（即使失败也保存）
+                    if final_state.get('execution_path'):
+                        report.execution_path = json.dumps(final_state['execution_path'], ensure_ascii=False)
+                    if final_state.get('agent_decisions') or final_state.get('quality_score'):
+                        report.workflow_metadata = json.dumps({
+                            "agent_decisions": final_state.get('agent_decisions', []),
+                            "quality_score": final_state.get('quality_score'),
+                            "retry_count": final_state.get('retry_count', 0),
+                            "start_time": final_state.get('start_time'),
+                            "end_time": final_state.get('end_time'),
+                            "error_message": error_msg
+                        }, ensure_ascii=False)
+                    db.session.commit()
+                return
             
             # 解析内容提取摘要
             try:
@@ -77,20 +138,34 @@ def _generate_report_async(report_id, user_id, api_key, model, report_type, star
                 report.summary = summary
                 report.status = 'completed'
                 report.generated_at = datetime.utcnow()
+                
+                # 保存工作流轨迹数据（这部分应该已经在save_report_node中保存了，但为了确保兼容性再保存一次）
+                if final_state.get('execution_path'):
+                    report.execution_path = json.dumps(final_state['execution_path'], ensure_ascii=False)
+                if final_state.get('agent_decisions') or final_state.get('quality_score'):
+                    report.workflow_metadata = json.dumps({
+                        "agent_decisions": final_state.get('agent_decisions', []),
+                        "quality_score": final_state.get('quality_score'),
+                        "retry_count": final_state.get('retry_count', 0),
+                        "start_time": final_state.get('start_time'),
+                        "end_time": final_state.get('end_time')
+                    }, ensure_ascii=False)
+                
                 db.session.commit()
                 
-                print(f"\n[并发报告生成] ✅ 成功 - 报告ID: {report_id}")
+                print(f"\n[LangGraph工作流] ✅ 成功 - 报告ID: {report_id}")
                 print(f"- 摘要: {summary[:50]}...")
-                print(f"- 生成时间: {report.generated_at}\n")
+                print(f"- 生成时间: {report.generated_at}")
+                print(f"- 工作流节点数: {len(final_state.get('execution_path', []))}\n")
             else:
-                print(f"\n[并发报告生成] ⚠️ 报告不存在 - 报告ID: {report_id}\n")
+                print(f"\n[LangGraph工作流] ⚠️ 报告不存在 - 报告ID: {report_id}\n")
                 
         except Exception as e:
             # 处理错误
             import traceback
             error_details = traceback.format_exc()
             
-            print(f"\n[并发报告生成] ❌ 失败 - 报告ID: {report_id}")
+            print(f"\n[LangGraph工作流] ❌ 失败 - 报告ID: {report_id}")
             print(f"- 错误类型: {type(e).__name__}")
             print(f"- 错误信息: {str(e)}")
             print(f"- 详细堆栈:\n{error_details}")
@@ -103,7 +178,7 @@ def _generate_report_async(report_id, user_id, api_key, model, report_type, star
                     report.error_message = str(e)
                     db.session.commit()
             except Exception as db_error:
-                print(f"[并发报告生成] 数据库更新失败: {str(db_error)}")
+                print(f"[LangGraph工作流] 数据库更新失败: {str(db_error)}")
 
 def get_current_user():
     """获取当前用户"""
@@ -543,4 +618,75 @@ def get_report_stats():
         return jsonify({
             'success': False,
             'message': f'获取统计信息失败：{str(e)}'
+        }), 500
+
+
+@reports_bp.route('/reports/workflow/visualization', methods=['GET'])
+@jwt_required()
+def get_workflow_visualization():
+    """获取工作流可视化数据"""
+    try:
+        workflow_service = get_workflow_service()
+        visualization_data = workflow_service.get_workflow_visualization()
+        
+        return jsonify({
+            'success': True,
+            'data': visualization_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'获取工作流可视化失败：{str(e)}'
+        }), 500
+
+
+@reports_bp.route('/reports/<int:report_id>/workflow-trace', methods=['GET'])
+@jwt_required()
+def get_report_workflow_trace(report_id):
+    """获取报告的工作流执行轨迹"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': '用户不存在'
+            }), 404
+        
+        report = AIReport.query.get(report_id)
+        
+        if not report:
+            return jsonify({
+                'success': False,
+                'message': '报告不存在'
+            }), 404
+        
+        # 权限检查
+        if report.user_id != user.id:
+            return jsonify({
+                'success': False,
+                'message': '无权访问此报告'
+            }), 403
+        
+        # 从报告中提取工作流执行轨迹
+        report_dict = report.to_dict()
+        
+        trace_data = {
+            'report_id': report_id,
+            'status': report.status,
+            'execution_path': report_dict.get('execution_path', []),
+            'workflow_metadata': report_dict.get('workflow_metadata', {}),
+            'created_at': report.created_at.isoformat() if report.created_at else None,
+            'completed_at': report.generated_at.isoformat() if report.generated_at else None
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': trace_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'获取工作流轨迹失败：{str(e)}'
         }), 500

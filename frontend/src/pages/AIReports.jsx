@@ -18,7 +18,8 @@ import {
   Statistic,
   Alert,
   Spin,
-  InputNumber
+  InputNumber,
+  Tabs
 } from 'antd';
 import {
   FileTextOutlined,
@@ -30,12 +31,14 @@ import {
   SettingOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  SyncOutlined
+  SyncOutlined,
+  NodeIndexOutlined
 } from '@ant-design/icons';
 import request from '../utils/request';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek'; // 引入ISO周插件
 import ReportRenderer from '../components/ReportRenderer'; // 引入增强渲染器
+import WorkflowVisualization from '../components/WorkflowVisualization'; // 工作流可视化组件
 
 // 扩展dayjs支持ISO周
 dayjs.extend(isoWeek);
@@ -66,6 +69,11 @@ const AIReports = () => {
   // 搜索相关状态
   const [searchText, setSearchText] = useState(''); // 搜索文本
   const [searchType, setSearchType] = useState('all'); // 搜索类型筛选
+  
+  // 批量删除相关状态
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]); // 选中的报告ID
+  const [workflowModalVisible, setWorkflowModalVisible] = useState(false); // 工作流模态框
+  const [workflowReportId, setWorkflowReportId] = useState(null); // 当前查看工作流的报告ID
 
   // 加载数据
   useEffect(() => {
@@ -390,6 +398,52 @@ const AIReports = () => {
       },
     });
   };
+  
+  // 批量删除报告
+  const handleBatchDelete = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请先选择要删除的报告');
+      return;
+    }
+    
+    Modal.confirm({
+      title: '批量删除',
+      content: `确定要删除选中的 ${selectedRowKeys.length} 个报告吗？此操作不可恢复。`,
+      okText: '确认',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          // 逐个删除
+          const deletePromises = selectedRowKeys.map(id => 
+            request.delete(`/reports/${id}`)
+          );
+          
+          await Promise.all(deletePromises);
+          message.success(`成功删除 ${selectedRowKeys.length} 个报告`);
+          setSelectedRowKeys([]);
+          loadReports();
+          loadStats();
+        } catch (error) {
+          message.error('批量删除失败');
+        }
+      },
+    });
+  };
+  
+  // 查看工作流轨迹
+  const handleViewWorkflow = (reportId) => {
+    setWorkflowReportId(reportId);
+    setWorkflowModalVisible(true);
+  };
+  
+  // 行选择配置
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (selectedKeys) => {
+      setSelectedRowKeys(selectedKeys);
+    },
+  };
 
   // 渲染报告内容
   const renderReportContent = (report) => {
@@ -471,12 +525,39 @@ const AIReports = () => {
       render: (_, record) => (
         <Space>
           {record.status === 'completed' && (
+            <>
+              <Button
+                type="link"
+                icon={<EyeOutlined />}
+                onClick={() => handleViewReport(record.id)}
+              >
+                查看
+              </Button>
+              <Button
+                type="link"
+                icon={<NodeIndexOutlined />}
+                onClick={() => handleViewWorkflow(record.id)}
+              >
+                工作流
+              </Button>
+            </>
+          )}
+          {record.status === 'generating' && (
             <Button
               type="link"
-              icon={<EyeOutlined />}
-              onClick={() => handleViewReport(record.id)}
+              icon={<SyncOutlined spin />}
+              onClick={() => handleViewWorkflow(record.id)}
             >
-              查看
+              实时查看
+            </Button>
+          )}
+          {record.status === 'failed' && (
+            <Button
+              type="link"
+              icon={<NodeIndexOutlined />}
+              onClick={() => handleViewWorkflow(record.id)}
+            >
+              查看失败原因
             </Button>
           )}
           <Button
@@ -571,6 +652,14 @@ const AIReports = () => {
         <Button icon={<ReloadOutlined />} onClick={loadReports}>
           刷新
         </Button>
+        <Button 
+          danger
+          icon={<DeleteOutlined />} 
+          onClick={handleBatchDelete}
+          disabled={selectedRowKeys.length === 0}
+        >
+          批量删除 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+        </Button>
         <Button icon={<SettingOutlined />} onClick={() => setTokenModalVisible(true)}>
           配置API Key
         </Button>
@@ -612,10 +701,35 @@ const AIReports = () => {
           dataSource={filteredReports}
           columns={columns}
           rowKey="id"
+          rowSelection={rowSelection}
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
         />
       </Card>
+      
+      {/* 工作流可视化独立模态框 */}
+      <Modal
+        title={<span><NodeIndexOutlined /> 工作流执行轨迹</span>}
+        open={workflowModalVisible}
+        onCancel={() => {
+          setWorkflowModalVisible(false);
+          setWorkflowReportId(null);
+        }}
+        footer={null}
+        width={1000}
+        destroyOnClose
+      >
+        {workflowReportId && (
+          <WorkflowVisualization 
+            reportId={workflowReportId}
+            refreshInterval={3000}
+          />
+        )}
+      </Modal>
 
       {/* API Key配置弹窗 */}
       <Modal
@@ -966,17 +1080,37 @@ const AIReports = () => {
         styles={{ body: { maxHeight: '80vh', overflow: 'auto' } }}
       >
         {currentReport && (
-          <div>
-            <Space style={{ marginBottom: 16 }}>
-              <Tag>{currentReport.report_type_text}</Tag>
-              <Tag>
-                {dayjs(currentReport.start_date).format('YYYY-MM-DD')} 至{' '}
-                {dayjs(currentReport.end_date).format('YYYY-MM-DD')}
-              </Tag>
-            </Space>
-            <Divider />
-            {renderReportContent(currentReport)}
-          </div>
+          <Tabs defaultActiveKey="content">
+            {/* 报告内容Tab */}
+            <Tabs.TabPane tab="📊 报告内容" key="content">
+              <div>
+                <Space style={{ marginBottom: 16 }}>
+                  <Tag>{currentReport.report_type_text}</Tag>
+                  <Tag>
+                    {dayjs(currentReport.start_date).format('YYYY-MM-DD')} 至{' '}
+                    {dayjs(currentReport.end_date).format('YYYY-MM-DD')}
+                  </Tag>
+                </Space>
+                <Divider />
+                {renderReportContent(currentReport)}
+              </div>
+            </Tabs.TabPane>
+            
+            {/* 工作流轨迹Tab */}
+            <Tabs.TabPane 
+              tab={
+                <span>
+                  <NodeIndexOutlined /> 工作流轨迹
+                </span>
+              } 
+              key="workflow"
+            >
+              <WorkflowVisualization 
+                reportId={currentReport.id}
+                refreshInterval={3000}
+              />
+            </Tabs.TabPane>
+          </Tabs>
         )}
       </Modal>
     </div>

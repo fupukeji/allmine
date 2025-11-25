@@ -23,6 +23,10 @@ class AIReport(db.Model):
     # 数据快照（用于报告生成时的数据备份）
     data_snapshot = db.Column(db.Text)  # JSON格式的数据快照
     
+    # 工作流轨迹数据（新增）
+    execution_path = db.Column(db.Text)  # JSON格式，记录每个节点的执行状态、时间戳和结果
+    workflow_metadata = db.Column(db.Text)  # JSON格式，记录agent决策、质量评分等元数据
+    
     # 状态
     status = db.Column(db.String(20), default='generating')  # generating, completed, failed
     error_message = db.Column(db.Text)  # 错误信息（如果失败）
@@ -56,7 +60,9 @@ class AIReport(db.Model):
     
     def to_dict(self):
         """转换为字典"""
-        return {
+        import json
+        
+        result = {
             'id': self.id,
             'user_id': self.user_id,
             'report_type': self.report_type,
@@ -73,6 +79,25 @@ class AIReport(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+        
+        # 解析工作流数据（如果有）
+        if self.execution_path:
+            try:
+                result['execution_path'] = json.loads(self.execution_path)
+            except:
+                result['execution_path'] = []
+        else:
+            result['execution_path'] = []
+        
+        if self.workflow_metadata:
+            try:
+                result['workflow_metadata'] = json.loads(self.workflow_metadata)
+            except:
+                result['workflow_metadata'] = {}
+        else:
+            result['workflow_metadata'] = {}
+        
+        return result
     
     def __repr__(self):
         return f'<AIReport {self.report_type}: {self.title}>'
