@@ -17,14 +17,16 @@ import {
   Col,
   Progress,
   Card,
-  Statistic
+  Statistic,
+  TreeSelect
 } from 'antd'
 import { 
   PlusOutlined, 
   EditOutlined, 
   DeleteOutlined,
   EyeOutlined,
-  FilterOutlined
+  FilterOutlined,
+  FolderOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { 
@@ -82,6 +84,7 @@ const getCategoryGroup = (categoryName) => {
 const Projects = () => {
   const [projects, setProjects] = useState([])
   const [categories, setCategories] = useState([])
+  const [treeCategories, setTreeCategories] = useState([]) // 树形分类数据
   const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [detailModalVisible, setDetailModalVisible] = useState(false)
@@ -89,7 +92,6 @@ const Projects = () => {
   const [selectedProject, setSelectedProject] = useState(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState([])
   const [filters, setFilters] = useState({})
-  const [selectedCategoryGroup, setSelectedCategoryGroup] = useState(null) // 新增: 当前选中的一级分类
   const [form] = Form.useForm()
 
   // 分组分类
@@ -109,6 +111,53 @@ const Projects = () => {
     
     return grouped
   }, [categories])
+
+  // 将平面分类数据转换为树形结构
+  const buildCategoryTree = (flatData) => {
+    const tree = []
+    const map = {}
+    
+    flatData.forEach(item => {
+      map[item.id] = { ...item, children: [] }
+    })
+    
+    flatData.forEach(item => {
+      if (item.parent_id) {
+        if (map[item.parent_id]) {
+          map[item.parent_id].children.push(map[item.id])
+        }
+      } else {
+        tree.push(map[item.id])
+      }
+    })
+    
+    const cleanEmptyChildren = (nodes) => {
+      nodes.forEach(node => {
+        if (node.children && node.children.length > 0) {
+          cleanEmptyChildren(node.children)
+        } else {
+          delete node.children
+        }
+      })
+    }
+    cleanEmptyChildren(tree)
+    
+    return tree
+  }
+
+  // 构建 TreeSelect 的数据
+  const buildTreeSelectData = (categories) => {
+    return categories.map(cat => ({
+      value: cat.id,
+      title: (
+        <Space>
+          <FolderOutlined style={{ color: cat.color || '#1890ff' }} />
+          {cat.name}
+        </Space>
+      ),
+      children: cat.children ? buildTreeSelectData(cat.children) : undefined
+    }))
+  }
 
   useEffect(() => {
     fetchData()
@@ -144,6 +193,8 @@ const Projects = () => {
       const response = await getCategories()
       if (response.code === 200) {
         setCategories(response.data)
+        const tree = buildCategoryTree(response.data)
+        setTreeCategories(tree)
       }
     } catch (error) {
       console.error('获取分类列表失败:', error)
@@ -152,7 +203,6 @@ const Projects = () => {
 
   const handleAdd = () => {
     setEditingProject(null)
-    setSelectedCategoryGroup(null)
     setModalVisible(true)
     form.resetFields()
     form.setFieldsValue({
@@ -165,14 +215,8 @@ const Projects = () => {
     setEditingProject(project)
     setModalVisible(true)
     
-    // 根据分类找到对应的组
-    const category = categories.find(c => c.id === project.category_id)
-    const categoryGroup = category ? getCategoryGroup(category.name) : null
-    setSelectedCategoryGroup(categoryGroup)
-    
     form.setFieldsValue({
       ...project,
-      category_group: categoryGroup,
       start_time: project.start_time ? dayjs(project.start_time) : null,
       end_time: project.end_time ? dayjs(project.end_time) : null,
       purchase_time: project.purchase_time ? dayjs(project.purchase_time) : null,
@@ -481,49 +525,20 @@ const Projects = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="资产类型">
-                <Space.Compact style={{ width: '100%' }}>
-                  <Form.Item
-                    noStyle
-                    name="category_group"
-                  >
-                    <Select
-                      placeholder="一级分类"
-                      style={{ width: '50%' }}
-                      onChange={(value) => {
-                        setSelectedCategoryGroup(value)
-                        form.setFieldsValue({ category_id: undefined })
-                      }}
-                    >
-                      {Object.entries(categoryGroups).map(([groupKey, groupConfig]) => {
-                        const groupData = groupedCategories[groupKey] || []
-                        if (groupData.length === 0) return null
-                        return (
-                          <Option key={groupKey} value={groupKey}>
-                            {groupConfig.title}
-                          </Option>
-                        )
-                      })}
-                    </Select>
-                  </Form.Item>
-                  <Form.Item
-                    noStyle
-                    name="category_id"
-                    rules={[{ required: true, message: '请选择分类!' }]}
-                  >
-                    <Select
-                      placeholder="二级分类"
-                      style={{ width: '50%' }}
-                      showSearch
-                      optionFilterProp="children"
-                      disabled={!selectedCategoryGroup}
-                    >
-                      {selectedCategoryGroup && (groupedCategories[selectedCategoryGroup] || []).map(cat => (
-                        <Option key={cat.id} value={cat.id}>{cat.name}</Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Space.Compact>
+              <Form.Item
+                label="资产分类"
+                name="category_id"
+                rules={[{ required: true, message: '请选择分类!' }]}
+                help="支持多级分类选择"
+              >
+                <TreeSelect
+                  placeholder="请选择分类"
+                  treeDefaultExpandAll
+                  treeData={buildTreeSelectData(treeCategories)}
+                  showSearch
+                  treeNodeFilterProp="title"
+                  allowClear
+                />
               </Form.Item>
             </Col>
             <Col span={12}>

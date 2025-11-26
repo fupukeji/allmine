@@ -19,7 +19,8 @@ import {
   Card,
   Statistic,
   Descriptions,
-  Tabs
+  Tabs,
+  TreeSelect
 } from 'antd'
 import { 
   PlusOutlined, 
@@ -29,7 +30,8 @@ import {
   BarChartOutlined,
   AlertOutlined,
   DollarOutlined,
-  PlusCircleOutlined
+  PlusCircleOutlined,
+  FolderOutlined
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
@@ -93,6 +95,7 @@ const FixedAssets = () => {
   const navigate = useNavigate()
   const [assets, setAssets] = useState([])
   const [categories, setCategories] = useState([])
+  const [treeCategories, setTreeCategories] = useState([]) // 树形分类数据
   const [statistics, setStatistics] = useState(null)
   const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
@@ -107,7 +110,6 @@ const FixedAssets = () => {
   const [assetIncomes, setAssetIncomes] = useState([])
   const [incomeAnalysis, setIncomeAnalysis] = useState(null)
   const [incomeLoading, setIncomeLoading] = useState(false)
-  const [selectedCategoryGroup, setSelectedCategoryGroup] = useState(null) // 新增
   const [form] = Form.useForm()
   const [incomeForm] = Form.useForm()
 
@@ -128,6 +130,56 @@ const FixedAssets = () => {
     
     return grouped
   }, [categories])
+
+  // 将平面分类数据转换为树形结构
+  const buildCategoryTree = (flatData) => {
+    const tree = []
+    const map = {}
+    
+    // 创建映射
+    flatData.forEach(item => {
+      map[item.id] = { ...item, children: [] }
+    })
+    
+    // 构建树
+    flatData.forEach(item => {
+      if (item.parent_id) {
+        if (map[item.parent_id]) {
+          map[item.parent_id].children.push(map[item.id])
+        }
+      } else {
+        tree.push(map[item.id])
+      }
+    })
+    
+    // 清理空的 children 数组
+    const cleanEmptyChildren = (nodes) => {
+      nodes.forEach(node => {
+        if (node.children && node.children.length > 0) {
+          cleanEmptyChildren(node.children)
+        } else {
+          delete node.children
+        }
+      })
+    }
+    cleanEmptyChildren(tree)
+    
+    return tree
+  }
+
+  // 构建 TreeSelect 的数据
+  const buildTreeSelectData = (categories) => {
+    return categories.map(cat => ({
+      value: cat.id,
+      title: (
+        <Space>
+          <FolderOutlined style={{ color: cat.color || '#1890ff' }} />
+          {cat.name}
+        </Space>
+      ),
+      children: cat.children ? buildTreeSelectData(cat.children) : undefined
+    }))
+  }
 
   useEffect(() => {
     fetchData()
@@ -164,6 +216,9 @@ const FixedAssets = () => {
       const response = await getCategories()
       if (response.code === 200) {
         setCategories(response.data)
+        // 构建树形结构
+        const tree = buildCategoryTree(response.data)
+        setTreeCategories(tree)
       }
     } catch (error) {
       console.error('获取分类列表失败:', error)
@@ -183,7 +238,6 @@ const FixedAssets = () => {
 
   const handleAdd = () => {
     setEditingAsset(null)
-    setSelectedCategoryGroup(null)
     setModalVisible(true)
     form.resetFields()
     form.setFieldsValue({
@@ -200,14 +254,8 @@ const FixedAssets = () => {
     setEditingAsset(asset)
     setModalVisible(true)
     
-    // 根据分类找到对应的组
-    const category = categories.find(c => c.id === asset.category_id)
-    const categoryGroup = category ? getCategoryGroup(category.name) : null
-    setSelectedCategoryGroup(categoryGroup)
-    
     form.setFieldsValue({
       ...asset,
-      category_group: categoryGroup,
       purchase_date: asset.purchase_date ? dayjs(asset.purchase_date) : null,
       depreciation_start_date: asset.depreciation_start_date ? dayjs(asset.depreciation_start_date) : null,
     })
@@ -735,49 +783,20 @@ const FixedAssets = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="资产类型">
-                <Space.Compact style={{ width: '100%' }}>
-                  <Form.Item
-                    noStyle
-                    name="category_group"
-                  >
-                    <Select
-                      placeholder="一级分类"
-                      style={{ width: '50%' }}
-                      onChange={(value) => {
-                        setSelectedCategoryGroup(value)
-                        form.setFieldsValue({ category_id: undefined })
-                      }}
-                    >
-                      {Object.entries(categoryGroups).map(([groupKey, groupConfig]) => {
-                        const groupData = groupedCategories[groupKey] || []
-                        if (groupData.length === 0) return null
-                        return (
-                          <Option key={groupKey} value={groupKey}>
-                            {groupConfig.title}
-                          </Option>
-                        )
-                      })}
-                    </Select>
-                  </Form.Item>
-                  <Form.Item
-                    noStyle
-                    name="category_id"
-                    rules={[{ required: true, message: '请选择分类!' }]}
-                  >
-                    <Select
-                      placeholder="二级分类"
-                      style={{ width: '50%' }}
-                      showSearch
-                      optionFilterProp="children"
-                      disabled={!selectedCategoryGroup}
-                    >
-                      {selectedCategoryGroup && (groupedCategories[selectedCategoryGroup] || []).map(cat => (
-                        <Option key={cat.id} value={cat.id}>{cat.name}</Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Space.Compact>
+              <Form.Item
+                label="资产分类"
+                name="category_id"
+                rules={[{ required: true, message: '请选择分类!' }]}
+                help="支持多级分类选择"
+              >
+                <TreeSelect
+                  placeholder="请选择分类"
+                  treeDefaultExpandAll
+                  treeData={buildTreeSelectData(treeCategories)}
+                  showSearch
+                  treeNodeFilterProp="title"
+                  allowClear
+                />
               </Form.Item>
             </Col>
             <Col span={12}>

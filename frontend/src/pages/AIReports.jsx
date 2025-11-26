@@ -807,75 +807,109 @@ const AIReports = () => {
             initialValue="glm-4-flash"
             rules={[{ required: true, message: '请选择模型' }]}
           >
-            <Select placeholder="请选择AI模型" size="large">
-              <Option value="glm-4-flash">
-                <div style={{ padding: '4px 0' }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-Flash (推荐⭐)</div>
-                  <div style={{ fontSize: 12, color: '#52c41a', marginTop: 2 }}>
-                    完全免费 | 高速响应 | 1000次/分
+            <Select placeholder="请选择AI模型" size="large" optionLabelProp="label">
+              <Option value="glm-4-flash" label="GLM-4-Flash (推荐⭐)">
+                <div style={{ padding: '8px 4px', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontWeight: 600, fontSize: 15, color: '#262626' }}>GLM-4-Flash</span>
+                    <span style={{ fontSize: 12, color: '#fff', background: '#52c41a', padding: '2px 8px', borderRadius: 10, fontWeight: 500 }}>推荐⭐</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: 12, color: '#8c8c8c' }}>
+                    <span style={{ color: '#52c41a', fontWeight: 500 }}>💚 完全免费</span>
+                    <span>⚡ 高速响应</span>
+                    <span>🚀 1000次/分</span>
                   </div>
                 </div>
               </Option>
               
-              <Option value="glm-z1-flash">
-                <div style={{ padding: '4px 0' }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-Z1-Flash</div>
-                  <div style={{ fontSize: 12, color: '#52c41a', marginTop: 2 }}>
-                    完全免费 | 推理增强 | 40次/分
+              <Option value="glm-z1-flash" label="GLM-Z1-Flash">
+                <div style={{ padding: '8px 4px', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontWeight: 600, fontSize: 15, color: '#262626' }}>GLM-Z1-Flash</span>
+                    <span style={{ fontSize: 12, color: '#fff', background: '#52c41a', padding: '2px 8px', borderRadius: 10, fontWeight: 500 }}>免费</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: 12, color: '#8c8c8c' }}>
+                    <span style={{ color: '#52c41a', fontWeight: 500 }}>💚 完全免费</span>
+                    <span>🧠 推理增强</span>
+                    <span>🚀 40次/分</span>
                   </div>
                 </div>
               </Option>
               
-              <Option value="glm-4-air">
-                <div style={{ padding: '4px 0' }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-Air</div>
-                  <div style={{ fontSize: 12, color: '#1890ff', marginTop: 2 }}>
-                    超低成本 0.0005元/千Tokens | 200次/分
+              <Option value="glm-4-air" label="GLM-4-Air">
+                <div style={{ padding: '8px 4px', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontWeight: 600, fontSize: 15, color: '#262626' }}>GLM-4-Air</span>
+                    <span style={{ fontSize: 12, color: '#fff', background: '#1890ff', padding: '2px 8px', borderRadius: 10, fontWeight: 500 }}>超低价</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: 12, color: '#8c8c8c' }}>
+                    <span style={{ color: '#1890ff', fontWeight: 500 }}>💰 0.0005元/千T</span>
+                    <span>🚀 200次/分</span>
                   </div>
                 </div>
               </Option>
               
-              <Option value="glm-4-airx">
-                <div style={{ padding: '4px 0' }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-AirX</div>
-                  <div style={{ fontSize: 12, color: '#1890ff', marginTop: 2 }}>
-                    超轻量 0.01元/千Tokens | 30次/分
+              <Option value="glm-4-airx" label="GLM-4-AirX">
+                <div style={{ padding: '8px 4px', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontWeight: 600, fontSize: 15, color: '#262626' }}>GLM-4-AirX</span>
+                    <span style={{ fontSize: 12, color: '#fff', background: '#1890ff', padding: '2px 8px', borderRadius: 10, fontWeight: 500 }}>超轻量</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: 12, color: '#8c8c8c' }}>
+                    <span style={{ color: '#1890ff', fontWeight: 500 }}>💰 0.01元/千T</span>
+                    <span>🚀 30次/分</span>
                   </div>
                 </div>
               </Option>
               
-              <Option value="glm-4-flashx">
-                <div style={{ padding: '4px 0' }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-FlashX</div>
-                  <div style={{ fontSize: 12, color: '#1890ff', marginTop: 2 }}>
-                    极低成本 0.0001元/千Tokens | 100次/分
+              <Option value="glm-4-flashx" label="GLM-4-FlashX">
+                <div style={{ padding: '8px 4px', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontWeight: 600, fontSize: 15, color: '#262626' }}>GLM-4-FlashX</span>
+                    <span style={{ fontSize: 12, color: '#fff', background: '#1890ff', padding: '2px 8px', borderRadius: 10, fontWeight: 500 }}>极低价</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: 12, color: '#8c8c8c' }}>
+                    <span style={{ color: '#1890ff', fontWeight: 500 }}>💰 0.0001元/千T</span>
+                    <span>🚀 100次/分</span>
                   </div>
                 </div>
               </Option>
               
-              <Option value="glm-4-plus">
-                <div style={{ padding: '4px 0' }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-Plus</div>
-                  <div style={{ fontSize: 12, color: '#fa8c16', marginTop: 2 }}>
-                    增强版 0.005元/千Tokens | 50次/分
+              <Option value="glm-4-plus" label="GLM-4-Plus">
+                <div style={{ padding: '8px 4px', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontWeight: 600, fontSize: 15, color: '#262626' }}>GLM-4-Plus</span>
+                    <span style={{ fontSize: 12, color: '#fff', background: '#fa8c16', padding: '2px 8px', borderRadius: 10, fontWeight: 500 }}>增强版</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: 12, color: '#8c8c8c' }}>
+                    <span style={{ color: '#fa8c16', fontWeight: 500 }}>💰 0.005元/千T</span>
+                    <span>🚀 50次/分</span>
                   </div>
                 </div>
               </Option>
               
-              <Option value="glm-4-long">
-                <div style={{ padding: '4px 0' }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4-Long</div>
-                  <div style={{ fontSize: 12, color: '#1890ff', marginTop: 2 }}>
-                    长文本 0.001元/千Tokens | 30次/分
+              <Option value="glm-4-long" label="GLM-4-Long">
+                <div style={{ padding: '8px 4px', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontWeight: 600, fontSize: 15, color: '#262626' }}>GLM-4-Long</span>
+                    <span style={{ fontSize: 12, color: '#fff', background: '#1890ff', padding: '2px 8px', borderRadius: 10, fontWeight: 500 }}>长文本</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: 12, color: '#8c8c8c' }}>
+                    <span style={{ color: '#1890ff', fontWeight: 500 }}>💰 0.001元/千T</span>
+                    <span>🚀 30次/分</span>
                   </div>
                 </div>
               </Option>
               
-              <Option value="glm-4">
-                <div style={{ padding: '4px 0' }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>GLM-4</div>
-                  <div style={{ fontSize: 12, color: '#fa8c16', marginTop: 2 }}>
-                    通用版 0.1元/千Tokens | 50次/分
+              <Option value="glm-4" label="GLM-4">
+                <div style={{ padding: '8px 4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontWeight: 600, fontSize: 15, color: '#262626' }}>GLM-4</span>
+                    <span style={{ fontSize: 12, color: '#fff', background: '#fa8c16', padding: '2px 8px', borderRadius: 10, fontWeight: 500 }}>通用版</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: 12, color: '#8c8c8c' }}>
+                    <span style={{ color: '#fa8c16', fontWeight: 500 }}>💰 0.1元/千T</span>
+                    <span>🚀 50次/分</span>
                   </div>
                 </div>
               </Option>

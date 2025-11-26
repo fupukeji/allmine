@@ -9,15 +9,30 @@ categories_bp = Blueprint('categories', __name__)
 @categories_bp.route('/categories', methods=['GET'])
 @jwt_required()
 def get_categories():
-    """获取分类列表"""
+    """获取分类列表（支持树形结构）"""
     try:
         user_id = int(get_jwt_identity())
-        categories = Category.query.filter_by(user_id=user_id).order_by(Category.created_at.desc()).all()
+        tree = request.args.get('tree', 'false').lower() == 'true'  # 是否返回树形结构
         
-        return jsonify({
-            'code': 200,
-            'data': [category.to_dict() for category in categories]
-        })
+        if tree:
+            # 返回树形结构：只返回顶级分类，包含其子分类
+            categories = Category.query.filter_by(
+                user_id=user_id, 
+                parent_id=None
+            ).order_by(Category.sort_order, Category.name).all()
+            
+            return jsonify({
+                'code': 200,
+                'data': [category.to_dict(include_children=True) for category in categories]
+            })
+        else:
+            # 返回平面列表
+            categories = Category.query.filter_by(user_id=user_id).order_by(Category.created_at.desc()).all()
+            
+            return jsonify({
+                'code': 200,
+                'data': [category.to_dict() for category in categories]
+            })
         
     except Exception as e:
         return jsonify({
@@ -28,13 +43,10 @@ def get_categories():
 @categories_bp.route('/categories', methods=['POST'])
 @jwt_required()
 def create_category():
-    """创建分类"""
+    """创建分类（支持层级）"""
     try:
-        print("Debug: create_category called")
         user_id = int(get_jwt_identity())
-        print(f"Debug: user_id = {user_id}")
         data = request.get_json()
-        print(f"Debug: data = {data}")
         
         # 验证必填字段
         if not data.get('name'):
@@ -44,6 +56,7 @@ def create_category():
             }), 400
         
         name = data['name'].strip()
+        parent_id = data.get('parent_id')  # 父分类ID
         
         # 验证分类名称长度
         if len(name) > 50:
@@ -52,16 +65,37 @@ def create_category():
                 'message': '分类名称不能超过50个字符'
             }), 400
         
-        # 检查分类名称是否已存在
+        # 如果有父分类，验证父分类是否存在
+        if parent_id:
+            parent_category = Category.query.filter_by(
+                id=parent_id,
+                user_id=user_id
+            ).first()
+            
+            if not parent_category:
+                return jsonify({
+                    'code': 404,
+                    'message': '父分类不存在'
+                }), 404
+            
+            # 限制层级深度（最多3级）
+            if parent_category.get_level() >= 2:
+                return jsonify({
+                    'code': 400,
+                    'message': '分类层级最多支持3级'
+                }), 400
+        
+        # 检查同一父级下分类名称是否已存在
         existing_category = Category.query.filter_by(
             user_id=user_id,
+            parent_id=parent_id,
             name=name
         ).first()
         
         if existing_category:
             return jsonify({
                 'code': 400,
-                'message': '分类名称已存在'
+                'message': '该层级下已存在同名分类'
             }), 400
         
         # 创建分类
@@ -69,6 +103,9 @@ def create_category():
             name=name,
             color=data.get('color', '#1890ff'),
             icon=data.get('icon', 'folder'),
+            description=data.get('description'),
+            sort_order=data.get('sort_order', 0),
+            parent_id=parent_id,
             user_id=user_id
         )
         
@@ -120,9 +157,10 @@ def update_category(category_id):
                     'message': '分类名称不能超过50个字符'
                 }), 400
             
-            # 检查分类名称是否已存在（排除当前分类）
+            # 检查同一父级下分类名称是否已存在（排除当前分类）
             existing_category = Category.query.filter(
                 Category.user_id == user_id,
+                Category.parent_id == category.parent_id,
                 Category.name == name,
                 Category.id != category_id
             ).first()
@@ -130,17 +168,56 @@ def update_category(category_id):
             if existing_category:
                 return jsonify({
                     'code': 400,
-                    'message': '分类名称已存在'
+                    'message': '该层级下已存在同名分类'
                 }), 400
             
             category.name = name
         
-        # 更新颜色和图标
+        # 更新父分类
+        if 'parent_id' in data:
+            new_parent_id = data['parent_id']
+            
+            # 不能把分类移动到自己下面
+            if new_parent_id == category_id:
+                return jsonify({
+                    'code': 400,
+                    'message': '不能将分类移动到自己下面'
+                }), 400
+            
+            # 如果有新父分类，验证存在性
+            if new_parent_id:
+                parent_category = Category.query.filter_by(
+                    id=new_parent_id,
+                    user_id=user_id
+                ).first()
+                
+                if not parent_category:
+                    return jsonify({
+                        'code': 404,
+                        'message': '父分类不存在'
+                    }), 404
+                
+                # 限制层级深度
+                if parent_category.get_level() >= 2:
+                    return jsonify({
+                        'code': 400,
+                        'message': '分类层级最多支持3级'
+                    }), 400
+            
+            category.parent_id = new_parent_id
+        
+        # 更新其他字段
         if 'color' in data:
             category.color = data['color']
         
         if 'icon' in data:
             category.icon = data['icon']
+        
+        if 'description' in data:
+            category.description = data['description']
+        
+        if 'sort_order' in data:
+            category.sort_order = data['sort_order']
         
         db.session.commit()
         
@@ -170,6 +247,14 @@ def delete_category(category_id):
                 'code': 404,
                 'message': '分类不存在'
             }), 404
+        
+        # 检查是否有子分类
+        child_count = category.children.count()
+        if child_count > 0:
+            return jsonify({
+                'code': 400,
+                'message': f'该分类下还有{child_count}个子分类，请先删除子分类'
+            }), 400
         
         # 检查是否有关联的项目
         project_count = Project.query.filter_by(category_id=category_id).count()
@@ -210,8 +295,10 @@ def get_category(category_id):
         
         # 获取该分类下的项目
         projects = Project.query.filter_by(category_id=category_id).all()
-        category_data = category.to_dict()
+        category_data = category.to_dict(include_children=True)
         category_data['projects'] = [project.to_dict() for project in projects]
+        category_data['full_path'] = category.get_full_path()
+        category_data['level'] = category.get_level()
         
         return jsonify({
             'code': 200,

@@ -12,19 +12,16 @@ import {
   Tag,
   Row,
   Col,
-  Collapse,
-  Badge
+  Badge,
+  TreeSelect,
+  InputNumber,
+  Tooltip
 } from 'antd'
 import { 
   PlusOutlined, 
   EditOutlined, 
   DeleteOutlined,
-  FolderOutlined,
-  AppstoreOutlined,
-  ShoppingOutlined,
-  BankOutlined,
-  CreditCardOutlined,
-  FileOutlined
+  FolderOutlined
 } from '@ant-design/icons'
 import { 
   getCategories, 
@@ -33,87 +30,76 @@ import {
   deleteCategory 
 } from '../services/categories'
 
-const { Title } = Typography
-const { Panel } = Collapse
+const { Title, Text } = Typography
+const { TextArea } = Input
 
 const Categories = () => {
   const [categories, setCategories] = useState([])
+  const [treeData, setTreeData] = useState([]) // 树形数据
   const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
   const [selectedColor, setSelectedColor] = useState('#1890ff')
+  const [selectedParentId, setSelectedParentId] = useState(null) // 选中的父分类
+  const [expandedRowKeys, setExpandedRowKeys] = useState([]) // 展开的行
   const [form] = Form.useForm()
-
-  // 资产分组定义
-  const categoryGroups = {
-    virtual: {
-      title: '随风而逝（虚拟消耗型资产）',
-      icon: <AppstoreOutlined />,
-      color: '#ff6b6b',
-      keywords: ['视频', '音乐', '知识', '外卖', '电商', '出行', '云存储', 
-                 '游戏', '直播', '电子书', '课程', '软件', '会员', '充值', '道具', '礼物']
-    },
-    fixed: {
-      title: '恒产生金（固定资产）',
-      icon: <ShoppingOutlined />,
-      color: '#5c7cfa',
-      keywords: ['房产', '车辆', '车位', '车库', '珠宝', '首饰', '艺术', '收藏', 
-                 '名包', '名表', '电脑', '手机', '数码', '摄影', '器材', 
-                 '家电', '家具', '智能家居']
-    },
-    financial: {
-      title: '金融流动资产',
-      icon: <BankOutlined />,
-      color: '#51cf66',
-      keywords: ['银行', '存款', '现金', '支付宝', '微信', '股票', '基金', 
-                 '债券', '理财', '数字货币', '比特币', '保险', '社保', '公积金']
-    },
-    liability: {
-      title: '负债管理',
-      icon: <CreditCardOutlined />,
-      color: '#fa5252',
-      keywords: ['房贷', '车贷', '信用卡', '消费贷', '花呗', '白条', '借呗', 
-                 '经营贷款', '私人借款', '借款']
-    },
-    other: {
-      title: '其他资产',
-      icon: <FileOutlined />,
-      color: '#868e96',
-      keywords: ['应收', '预付', '积分', '权益', '其他']
-    }
-  }
-
-  // 根据分类名称判断所属组
-  const getCategoryGroup = (categoryName) => {
-    for (const [groupKey, groupConfig] of Object.entries(categoryGroups)) {
-      if (groupConfig.keywords.some(keyword => categoryName.includes(keyword))) {
-        return groupKey
-      }
-    }
-    return 'other'
-  }
-
-  // 分组分类
-  const groupedCategories = React.useMemo(() => {
-    const grouped = {
-      virtual: [],
-      fixed: [],
-      financial: [],
-      liability: [],
-      other: []
-    }
-    
-    categories.forEach(category => {
-      const group = getCategoryGroup(category.name)
-      grouped[group].push(category)
-    })
-    
-    return grouped
-  }, [categories])
 
   useEffect(() => {
     fetchCategories()
   }, [])
+
+  // 将平面数据转换为树形结构
+  const buildTree = (flatData) => {
+    const tree = []
+    const map = {}
+    
+    // 创建映射
+    flatData.forEach(item => {
+      map[item.id] = { ...item, children: [] }
+    })
+    
+    // 构建树
+    flatData.forEach(item => {
+      if (item.parent_id) {
+        if (map[item.parent_id]) {
+          map[item.parent_id].children.push(map[item.id])
+        }
+      } else {
+        tree.push(map[item.id])
+      }
+    })
+    
+    // 清理空的 children 数组，避免展开按钮显示问题
+    const cleanEmptyChildren = (nodes) => {
+      nodes.forEach(node => {
+        if (node.children && node.children.length > 0) {
+          cleanEmptyChildren(node.children)
+        } else {
+          delete node.children
+        }
+      })
+    }
+    cleanEmptyChildren(tree)
+    
+    return tree
+  }
+
+  // 构建 TreeSelect 的数据
+  const buildTreeSelectData = (categories, level = 0) => {
+    return categories.map(cat => ({
+      value: cat.id,
+      title: (
+        <Space>
+          <FolderOutlined style={{ color: cat.color }} />
+          {cat.name}
+        </Space>
+      ),
+      disabled: level >= 2, // 最多3级，所以第3级不能再有子级
+      children: cat.children && cat.children.length > 0 
+        ? buildTreeSelectData(cat.children, level + 1) 
+        : undefined
+    }))
+  }
 
   const fetchCategories = async () => {
     setLoading(true)
@@ -121,6 +107,21 @@ const Categories = () => {
       const response = await getCategories()
       if (response.code === 200) {
         setCategories(response.data)
+        const tree = buildTree(response.data)
+        setTreeData(tree)
+        
+        // 自动展开所有有子节点的分类
+        const expandKeys = []
+        const collectExpandKeys = (nodes) => {
+          nodes.forEach(node => {
+            if (node.children && node.children.length > 0) {
+              expandKeys.push(node.id)
+              collectExpandKeys(node.children)
+            }
+          })
+        }
+        collectExpandKeys(tree)
+        setExpandedRowKeys(expandKeys)
       }
     } catch (error) {
       console.error('获取分类列表失败:', error)
@@ -129,18 +130,26 @@ const Categories = () => {
     }
   }
 
-  const handleAdd = () => {
+  const handleAdd = (parentId = null) => {
     setEditingCategory(null)
-    setSelectedColor('#1890ff') // 重置颜色选择
+    setSelectedColor('#1890ff')
+    setSelectedParentId(parentId)
     setModalVisible(true)
     form.resetFields()
+    if (parentId) {
+      form.setFieldsValue({ parent_id: parentId })
+    }
   }
 
   const handleEdit = (category) => {
     setEditingCategory(category)
-    setSelectedColor(category.color || '#1890ff') // 设置当前颜色
+    setSelectedColor(category.color || '#1890ff')
+    setSelectedParentId(category.parent_id)
     setModalVisible(true)
-    form.setFieldsValue(category)
+    form.setFieldsValue({
+      ...category,
+      parent_id: category.parent_id || undefined
+    })
   }
 
   const handleDelete = async (categoryId) => {
@@ -184,7 +193,8 @@ const Categories = () => {
   const handleModalCancel = () => {
     setModalVisible(false)
     setEditingCategory(null)
-    setSelectedColor('#1890ff') // 重置颜色选择
+    setSelectedColor('#1890ff')
+    setSelectedParentId(null)
     form.resetFields()
   }
 
@@ -196,7 +206,14 @@ const Categories = () => {
       render: (text, record) => (
         <Space>
           <FolderOutlined style={{ color: record.color }} />
-          {text}
+          <Text>{text}</Text>
+          {record.description && (
+            <Tooltip title={record.description}>
+              <Tag color="cyan" style={{ fontSize: 11 }}>
+                {record.description.substring(0, 10)}{record.description.length > 10 ? '...' : ''}
+              </Tag>
+            </Tooltip>
+          )}
         </Space>
       ),
     },
@@ -204,6 +221,7 @@ const Categories = () => {
       title: '颜色',
       dataIndex: 'color',
       key: 'color',
+      width: 120,
       render: (color) => (
         <Tag color={color}>{color}</Tag>
       ),
@@ -212,50 +230,84 @@ const Categories = () => {
       title: '图标',
       dataIndex: 'icon',
       key: 'icon',
+      width: 100,
     },
     {
       title: '项目数量',
       dataIndex: 'project_count',
       key: 'project_count',
-      render: (count) => `${count} 个`,
+      width: 100,
+      render: (count) => (
+        <Badge 
+          count={count} 
+          showZero 
+          style={{ backgroundColor: count > 0 ? '#52c41a' : '#d9d9d9' }}
+        />
+      ),
     },
     {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
+      width: 120,
       render: (time) => new Date(time).toLocaleDateString(),
     },
     {
       title: '操作',
       key: 'action',
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定删除这个分类吗？"
-            description={record.project_count > 0 ? `该分类下还有${record.project_count}个项目` : '删除后无法恢复'}
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-            disabled={record.project_count > 0}
-          >
+      width: 200,
+      render: (_, record) => {
+        // 计算当前层级（0=顶级, 1=二级, 2=三级）
+        const getLevel = (cat) => {
+          if (!cat.parent_id) return 0
+          const parent = categories.find(c => c.id === cat.parent_id)
+          return parent ? getLevel(parent) + 1 : 0
+        }
+        const level = getLevel(record)
+        
+        return (
+          <Space size="small">
+            {level < 2 && ( // 只有顶级和二级能添加子级
+              <Tooltip title="添加子分类">
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<PlusOutlined />}
+                  onClick={() => handleAdd(record.id)}
+                >
+                  子级
+                </Button>
+              </Tooltip>
+            )}
             <Button
               type="link"
-              danger
-              icon={<DeleteOutlined />}
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            >
+              编辑
+            </Button>
+            <Popconfirm
+              title="确定删除这个分类吗？"
+              description={record.project_count > 0 ? `该分类下还有${record.project_count}个项目` : '删除后无法恢复'}
+              onConfirm={() => handleDelete(record.id)}
+              okText="确定"
+              cancelText="取消"
               disabled={record.project_count > 0}
             >
-              删除
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                disabled={record.project_count > 0}
+              >
+                删除
+              </Button>
+            </Popconfirm>
+          </Space>
+        )
+      },
     },
   ]
 
@@ -281,38 +333,19 @@ const Categories = () => {
         </Col>
       </Row>
 
-      {/* 分组展示 */}
-      <Collapse 
-        defaultActiveKey={['virtual', 'fixed', 'financial', 'liability', 'other']}
-        style={{ marginBottom: 24 }}
-      >
-        {Object.entries(categoryGroups).map(([groupKey, groupConfig]) => {
-          const groupData = groupedCategories[groupKey] || []
-          return (
-            <Panel
-              key={groupKey}
-              header={
-                <Space>
-                  {groupConfig.icon}
-                  <span style={{ fontWeight: 'bold', color: groupConfig.color }}>
-                    {groupConfig.title}
-                  </span>
-                  <Badge count={groupData.length} style={{ backgroundColor: groupConfig.color }} />
-                </Space>
-              }
-            >
-              <Table
-                dataSource={groupData}
-                columns={columns}
-                rowKey="id"
-                loading={loading}
-                pagination={false}
-                size="small"
-              />
-            </Panel>
-          )
-        })}
-      </Collapse>
+      {/* 树形表格展示 */}
+      <Table
+        dataSource={treeData}
+        columns={columns}
+        rowKey="id"
+        loading={loading}
+        pagination={false}
+        expandable={{
+          expandedRowKeys: expandedRowKeys,
+          onExpandedRowsChange: (keys) => setExpandedRowKeys(keys),
+          childrenColumnName: 'children'
+        }}
+      />
 
       <Modal
         title={editingCategory ? '编辑分类' : '添加分类'}
@@ -320,15 +353,31 @@ const Categories = () => {
         onOk={handleModalOk}
         onCancel={handleModalCancel}
         destroyOnClose
+        width={600}
       >
         <Form
           form={form}
           layout="vertical"
           initialValues={{
             color: '#1890ff',
-            icon: 'folder'
+            icon: 'folder',
+            sort_order: 0
           }}
         >
+          <Form.Item
+            label="父级分类"
+            name="parent_id"
+            help="选择父级分类可创建层级结构，最多支持3级"
+          >
+            <TreeSelect
+              placeholder="不选择则为顶级分类"
+              allowClear
+              treeDefaultExpandAll
+              treeData={buildTreeSelectData(treeData)}
+              onChange={(value) => setSelectedParentId(value)}
+            />
+          </Form.Item>
+
           <Form.Item
             label="分类名称"
             name="name"
@@ -341,44 +390,75 @@ const Categories = () => {
           </Form.Item>
 
           <Form.Item
-            label="颜色"
-            name="color"
-            rules={[{ required: true, message: '请选择颜色!' }]}
+            label="分类描述"
+            name="description"
           >
-            <div>
-              <Row gutter={8}>
-                {colorOptions.map(color => (
-                  <Col key={color}>
-                    <div
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        backgroundColor: color,
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        border: selectedColor === color ? '3px solid #000' : '1px solid #d9d9d9',
-                        marginBottom: '8px',
-                        transition: 'border 0.2s ease'
-                      }}
-                      onClick={() => {
-                        setSelectedColor(color)
-                        form.setFieldsValue({ color })
-                      }}
-                    />
-                  </Col>
-                ))}
-              </Row>
-              <Input 
-                value={selectedColor} 
-                onChange={(e) => {
-                  const newColor = e.target.value
-                  setSelectedColor(newColor)
-                  form.setFieldsValue({ color: newColor })
-                }}
-                placeholder="或输入自定义颜色代码"
-              />
-            </div>
+            <TextArea 
+              placeholder="选填，用于说明该分类的用途" 
+              rows={3}
+              maxLength={200}
+              showCount
+            />
           </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="颜色"
+                name="color"
+                rules={[{ required: true, message: '请选择颜色!' }]}
+              >
+                <div>
+                  <Row gutter={8}>
+                    {colorOptions.map(color => (
+                      <Col key={color}>
+                        <div
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            backgroundColor: color,
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            border: selectedColor === color ? '3px solid #000' : '1px solid #d9d9d9',
+                            marginBottom: '8px',
+                            transition: 'border 0.2s ease'
+                          }}
+                          onClick={() => {
+                            setSelectedColor(color)
+                            form.setFieldsValue({ color })
+                          }}
+                        />
+                      </Col>
+                    ))}
+                  </Row>
+                  <Input 
+                    value={selectedColor} 
+                    onChange={(e) => {
+                      const newColor = e.target.value
+                      setSelectedColor(newColor)
+                      form.setFieldsValue({ color: newColor })
+                    }}
+                    placeholder="或输入自定义颜色代码"
+                  />
+                </div>
+              </Form.Item>
+            </Col>
+            
+            <Col span={12}>
+              <Form.Item
+                label="排序顺序"
+                name="sort_order"
+                help="数字越小越靠前"
+              >
+                <InputNumber 
+                  min={0} 
+                  max={9999} 
+                  style={{ width: '100%' }}
+                  placeholder="0"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item
             label="图标"
