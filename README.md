@@ -41,16 +41,44 @@ TimeValue是一个功能强大的个人资产管理系统，专为个人用户�
 
 ## 🚀 快速开始
 
-### 方式一：一键启动（推荐）
+### 📦 获取代码
 
 ```bash
-# 克隆项目
-git clone https://github.com/fupukeji/timevalue.git
+# 从阿里云Codeup克隆（推荐）
+git clone https://codeup.aliyun.com/670f88349d3c82efe37b1105/timevalue.git
 cd timevalue
 
+# 或从GitHub克隆
+git clone https://github.com/fupukeji/timevalue.git
+cd timevalue
+```
+
+### 方式一：一键启动（Windows开发环境）
+
+```bash
 # 一键启动（自动配置安全密钥、安装依赖、启动服务）
 python start_timevalue.py
 ```
+
+### 方式二：生产环境部署（阿里云服务器）
+
+```bash
+# 1. 一键部署
+chmod +x *.sh
+./deploy.sh
+
+# 2. 启动服务
+./start_production.sh
+
+# 3. 查看状态
+./check_status.sh
+```
+
+📖 **详细部署文档**:
+- [生产环境部署指南](DEPLOY_GUIDE.md)
+- [Windows部署指南](WINDOWS_DEPLOY_GUIDE.md)
+- [Git使用指南](GIT_GUIDE.md)
+- [快速参考](QUICK_REFERENCE.md)
 
 ### 方式二：手动启动
 
@@ -99,6 +127,23 @@ npm run dev
 - ✅ **JWT认证** - 无状态身份验证
 - ✅ **权限控制** - 基于角色的访问控制
 - ✅ **数据加密** - 敏感数据加密存储
+
+## 🌐 Git仓库
+
+本项目托管在阿里云Codeup，支持快速克隆和部署：
+
+- **主仓库**: https://codeup.aliyun.com/670f88349d3c82efe37b1105/timevalue.git
+- **镜像仓库**: https://github.com/fupukeji/timevalue
+
+### 推送代码
+
+```bash
+# Windows用户
+git_push.bat
+
+# Linux/Mac用户  
+./git_push.sh
+```
 
 ## 📱 功能预览
 
