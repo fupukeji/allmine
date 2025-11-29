@@ -3,7 +3,7 @@ import { request } from '../utils/request'
 // 获取资产维护记录列表
 export const getAssetMaintenances = (assetId, params = {}) => {
   return request({
-    url: `/assets/${assetId}/maintenances`,
+    url: `/maintenance/${assetId}`,
     method: 'GET',
     params
   })
@@ -12,16 +12,19 @@ export const getAssetMaintenances = (assetId, params = {}) => {
 // 创建资产维护记录
 export const createAssetMaintenance = (assetId, data) => {
   return request({
-    url: `/assets/${assetId}/maintenances`,
+    url: '/maintenance',
     method: 'POST',
-    data
+    data: {
+      ...data,
+      asset_id: assetId
+    }
   })
 }
 
 // 更新资产维护记录
 export const updateAssetMaintenance = (assetId, maintenanceId, data) => {
   return request({
-    url: `/assets/${assetId}/maintenances/${maintenanceId}`,
+    url: `/maintenance/${maintenanceId}`,
     method: 'PUT',
     data
   })
@@ -30,7 +33,7 @@ export const updateAssetMaintenance = (assetId, maintenanceId, data) => {
 // 删除资产维护记录
 export const deleteAssetMaintenance = (assetId, maintenanceId) => {
   return request({
-    url: `/assets/${assetId}/maintenances/${maintenanceId}`,
+    url: `/maintenance/${maintenanceId}`,
     method: 'DELETE'
   })
 }
@@ -38,7 +41,7 @@ export const deleteAssetMaintenance = (assetId, maintenanceId) => {
 // 获取资产维护统计
 export const getAssetMaintenanceStats = (assetId) => {
   return request({
-    url: `/assets/${assetId}/maintenance-stats`,
+    url: `/maintenance/${assetId}/stats`,
     method: 'GET'
   })
 }
@@ -46,7 +49,7 @@ export const getAssetMaintenanceStats = (assetId) => {
 // 获取用户所有资产维护概览
 export const getMaintenanceOverview = () => {
   return request({
-    url: '/maintenance-overview',
+    url: '/maintenance/overview',
     method: 'GET'
   })
 }
@@ -54,7 +57,7 @@ export const getMaintenanceOverview = () => {
 // 获取维护日历
 export const getMaintenanceCalendar = (params = {}) => {
   return request({
-    url: '/maintenance-calendar',
+    url: '/maintenance/calendar',
     method: 'GET',
     params
   })
@@ -63,7 +66,7 @@ export const getMaintenanceCalendar = (params = {}) => {
 // 获取维护提醒列表
 export const getMaintenanceReminders = () => {
   return request({
-    url: '/maintenance-reminders',
+    url: '/maintenance/reminders',
     method: 'GET'
   })
 }
@@ -71,7 +74,7 @@ export const getMaintenanceReminders = () => {
 // 创建维护提醒
 export const createMaintenanceReminder = (data) => {
   return request({
-    url: '/maintenance-reminders',
+    url: '/maintenance/reminders',
     method: 'POST',
     data
   })
@@ -80,7 +83,7 @@ export const createMaintenanceReminder = (data) => {
 // 获取到期的提醒
 export const getDueReminders = () => {
   return request({
-    url: '/maintenance-reminders/due',
+    url: '/maintenance/reminders/due',
     method: 'GET'
   })
 }

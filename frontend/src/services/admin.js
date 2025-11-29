@@ -17,15 +17,15 @@ export const updateUser = (userId, data) => {
 
 // 删除用户
 export const deleteUser = (userId) => {
-  return request.delete(`/admin/users/${userId}`)
+  return request.delete(`/admin/users/${userId}`)  
 }
 
-// 切换用户状态
-export const toggleUserStatus = (userId) => {
-  return request.put(`/admin/users/${userId}/toggle-status`)
+// 切换用户状态 - 修改为匹配后端接口
+export const toggleUserStatus = (userId, is_active) => {
+  return request.put(`/admin/users/${userId}/status`, { is_active })
 }
 
 // 获取管理员统计数据
 export const getAdminStats = () => {
-  return request.get('/admin/stats')
+  return request.get('/admin/statistics')
 }

@@ -3,7 +3,7 @@ import { request } from '../utils/request'
 // 获取资产收入列表
 export const getAssetIncomes = (assetId, params = {}) => {
   return request({
-    url: `/assets/${assetId}/incomes`,
+    url: `/income/${assetId}`,
     method: 'GET',
     params
   })
@@ -12,16 +12,19 @@ export const getAssetIncomes = (assetId, params = {}) => {
 // 创建资产收入记录
 export const createAssetIncome = (assetId, data) => {
   return request({
-    url: `/assets/${assetId}/incomes`,
+    url: '/income',
     method: 'POST',
-    data
+    data: {
+      ...data,
+      asset_id: assetId
+    }
   })
 }
 
 // 更新资产收入记录
 export const updateAssetIncome = (assetId, incomeId, data) => {
   return request({
-    url: `/assets/${assetId}/incomes/${incomeId}`,
+    url: `/income/${incomeId}`,
     method: 'PUT',
     data
   })
@@ -30,7 +33,7 @@ export const updateAssetIncome = (assetId, incomeId, data) => {
 // 删除资产收入记录
 export const deleteAssetIncome = (assetId, incomeId) => {
   return request({
-    url: `/assets/${assetId}/incomes/${incomeId}`,
+    url: `/income/${incomeId}`,
     method: 'DELETE'
   })
 }
@@ -38,7 +41,7 @@ export const deleteAssetIncome = (assetId, incomeId) => {
 // 获取资产收入分析
 export const getAssetIncomeAnalysis = (assetId) => {
   return request({
-    url: `/assets/${assetId}/income-analysis`,
+    url: `/income/${assetId}/analysis`,
     method: 'GET'
   })
 }
@@ -46,7 +49,7 @@ export const getAssetIncomeAnalysis = (assetId) => {
 // 获取用户所有资产收入概览
 export const getIncomeOverview = () => {
   return request({
-    url: '/income-overview',
+    url: '/income/overview',
     method: 'GET'
   })
 }
@@ -54,7 +57,7 @@ export const getIncomeOverview = () => {
 // 获取单个收入记录详情
 export const getIncomeDetail = (assetId, incomeId) => {
   return request({
-    url: `/assets/${assetId}/incomes/${incomeId}`,
+    url: `/income/${incomeId}`,
     method: 'GET'
   })
 }
@@ -62,7 +65,7 @@ export const getIncomeDetail = (assetId, incomeId) => {
 // 批量操作收入记录
 export const batchUpdateIncomes = (assetId, operations) => {
   return request({
-    url: `/assets/${assetId}/incomes/batch`,
+    url: '/income/batch',
     method: 'POST',
     data: operations
   })
@@ -71,7 +74,7 @@ export const batchUpdateIncomes = (assetId, operations) => {
 // 导出收入数据
 export const exportIncomeData = (assetId, params = {}) => {
   return request({
-    url: `/assets/${assetId}/incomes/export`,
+    url: `/income/${assetId}/export`,
     method: 'GET',
     params,
     responseType: 'blob'

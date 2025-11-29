@@ -49,4 +49,38 @@ router.put('/admin/users/:id/status', authMiddleware, adminMiddleware, async (re
   }
 })
 
+// 获取管理员统计数据
+router.get('/admin/statistics', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    // 获取用户总数
+    const userCount = await pool.query('SELECT COUNT(*) as count FROM users')
+    
+    // 获取活跃用户数
+    const activeUserCount = await pool.query('SELECT COUNT(*) as count FROM users WHERE is_active = true')
+    
+    // 获取项目总数
+    const projectCount = await pool.query('SELECT COUNT(*) as count FROM projects')
+    
+    // 获取资产总数
+    const assetCount = await pool.query('SELECT COUNT(*) as count FROM fixed_assets')
+    
+    // 获取分类总数
+    const categoryCount = await pool.query('SELECT COUNT(*) as count FROM categories')
+    
+    res.json({
+      code: 200,
+      data: {
+        total_users: parseInt(userCount.rows[0].count),
+        active_users: parseInt(activeUserCount.rows[0].count),
+        total_projects: parseInt(projectCount.rows[0].count),
+        total_assets: parseInt(assetCount.rows[0].count),
+        total_categories: parseInt(categoryCount.rows[0].count)
+      }
+    })
+  } catch (error) {
+    console.error('Get admin statistics error:', error)
+    res.status(500).json({ code: 500, message: '获取统计数据失败' })
+  }
+})
+
 export default router
