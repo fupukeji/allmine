@@ -48,6 +48,47 @@ const calculateDepreciation = (asset, baseDate = null) => {
   }
 }
 
+// 获取资产统计信息 - 必须在 /assets/:id 之前定义
+router.get('/assets/statistics', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM fixed_assets WHERE user_id = $1',
+      [req.userId]
+    )
+    
+    const assets = result.rows.map(a => calculateDepreciation(a))
+    
+    const stats = {
+      overview: {
+        total_assets: assets.length,
+        total_original_value: assets.reduce((sum, a) => sum + parseFloat(a.original_value), 0),
+        total_current_value: assets.reduce((sum, a) => sum + a.current_value, 0),
+        total_accumulated_depreciation: assets.reduce((sum, a) => sum + a.accumulated_depreciation, 0),
+        depreciation_rate: 0
+      },
+      status_distribution: [
+        { status: 'in_use', count: assets.filter(a => a.status === 'in_use').length },
+        { status: 'idle', count: assets.filter(a => a.status === 'idle').length },
+        { status: 'maintenance', count: assets.filter(a => a.status === 'maintenance').length },
+        { status: 'disposed', count: assets.filter(a => a.status === 'disposed').length }
+      ]
+    }
+    
+    if (stats.overview.total_original_value > 0) {
+      stats.overview.depreciation_rate = 
+        (stats.overview.total_accumulated_depreciation / stats.overview.total_original_value) * 100
+    }
+    
+    res.json({
+      code: 200,
+      data: stats
+    })
+  } catch (error) {
+    console.error('Get assets statistics error:', error)
+    res.status(500).json({ code: 500, message: '获取统计信息失败' })
+  }
+})
+
 // 获取资产列表
 router.get('/assets', authMiddleware, async (req, res) => {
   try {
@@ -274,47 +315,6 @@ router.get('/assets/:id/depreciation', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Get depreciation error:', error)
     res.status(500).json({ code: 500, message: '获取折旧详情失败' })
-  }
-})
-
-// 获取资产统计信息
-router.get('/assets/statistics', authMiddleware, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT * FROM fixed_assets WHERE user_id = $1',
-      [req.userId]
-    )
-    
-    const assets = result.rows.map(a => calculateDepreciation(a))
-    
-    const stats = {
-      overview: {
-        total_assets: assets.length,
-        total_original_value: assets.reduce((sum, a) => sum + parseFloat(a.original_value), 0),
-        total_current_value: assets.reduce((sum, a) => sum + a.current_value, 0),
-        total_accumulated_depreciation: assets.reduce((sum, a) => sum + a.accumulated_depreciation, 0),
-        depreciation_rate: 0
-      },
-      status_distribution: [
-        { status: 'in_use', count: assets.filter(a => a.status === 'in_use').length },
-        { status: 'idle', count: assets.filter(a => a.status === 'idle').length },
-        { status: 'maintenance', count: assets.filter(a => a.status === 'maintenance').length },
-        { status: 'disposed', count: assets.filter(a => a.status === 'disposed').length }
-      ]
-    }
-    
-    if (stats.overview.total_original_value > 0) {
-      stats.overview.depreciation_rate = 
-        (stats.overview.total_accumulated_depreciation / stats.overview.total_original_value) * 100
-    }
-    
-    res.json({
-      code: 200,
-      data: stats
-    })
-  } catch (error) {
-    console.error('Get assets statistics error:', error)
-    res.status(500).json({ code: 500, message: '获取统计信息失败' })
   }
 })
 
