@@ -552,329 +552,101 @@ const AssetsAnalytics = ({ loading, assetsStatistics }) => {
 
   return (
     <Spin spinning={loading}>
-      {/* 核心指标卡片 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="资产总数"
-              value={assetsStatistics.overview.total_assets}
-              prefix={<BankOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-              suffix="个"
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="原值总计"
-              value={assetsStatistics.overview.total_original_value}
-              precision={2}
-              prefix={<DollarOutlined />}
-              suffix="元"
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="当前价值"
-              value={assetsStatistics.overview.total_current_value}
-              precision={2}
-              prefix={<TrophyOutlined />}
-              suffix="元"
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="累计折旧"
-              value={assetsStatistics.overview.total_accumulated_depreciation}
-              precision={2}
-              prefix={<ClockCircleOutlined />}
-              suffix="元"
-              valueStyle={{ color: '#f5222d' }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* 收益指标卡片 */}
-      {assetsStatistics.income_overview && (
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="总收益"
-                value={assetsStatistics.income_overview.total_net_income}
-                precision={2}
-                prefix={<DollarOutlined />}
-                suffix="元"
-                valueStyle={{ color: '#52c41a' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="整体ROI"
-                value={assetsStatistics.income_overview.overall_roi}
-                precision={2}
-                prefix={<TrophyOutlined />}
-                suffix="%"
-                valueStyle={{ 
-                  color: assetsStatistics.income_overview.overall_roi >= 10 ? '#52c41a' : 
-                         assetsStatistics.income_overview.overall_roi >= 5 ? '#faad14' : '#f5222d' 
-                }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="收入记录数"
-                value={assetsStatistics.income_overview.total_income_records}
-                prefix={<ProjectOutlined />}
-                suffix="条"
-                valueStyle={{ color: '#1890ff' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="总成本"
-                value={assetsStatistics.income_overview.total_costs + assetsStatistics.income_overview.total_taxes}
-                precision={2}
-                prefix={<AlertOutlined />}
-                suffix="元"
-                valueStyle={{ color: '#f5222d' }}
-              />
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-      {/* 状态分布、分类分布和收入类型分布 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} lg={8}>
-          <Card title={<><PieChartOutlined /> 资产状态分布</>}>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={assetsStatistics.status_distribution.map(item => ({
-                    name: getStatusText(item.status),
-                    value: item.count,
-                    totalValue: item.total_value
-                  }))}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}个`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {assetsStatistics.status_distribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <RechartsTooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-        
-        <Col xs={24} lg={8}>
-          <Card title={<><BarChartOutlined /> 分类价值分布</>}>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={assetsStatistics.category_distribution}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category_name" />
-                <YAxis />
-                <RechartsTooltip />
-                <Bar dataKey="total_value" fill="#52c41a" />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-
-        <Col xs={24} lg={8}>
-          <Card title={<><PieChartOutlined /> 收入类型分布</>}>
-            {assetsStatistics.income_type_distribution && assetsStatistics.income_type_distribution.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={assetsStatistics.income_type_distribution.map(item => ({
-                      name: item.income_type_text,
-                      value: item.total_amount
-                    }))}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ¥${value.toFixed(0)}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {assetsStatistics.income_type_distribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip formatter={(value) => [`¥${value.toFixed(2)}`, '收入金额']} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '100px 0', color: '#999' }}>
-                暂无收入数据
-              </div>
-            )}
-          </Card>
-        </Col>
-      </Row>
-
-      {/* 月度收益趋势 */}
-      {assetsStatistics.monthly_income_trend && assetsStatistics.monthly_income_trend.length > 0 && (
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col span={24}>
-            <Card title={<><LineChart /> 月度收益趋势</>}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={assetsStatistics.monthly_income_trend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis />
-                  <RechartsTooltip 
-                    formatter={(value, name) => [
-                      name === 'amount' ? `¥${value.toFixed(2)}` : value,
-                      name === 'amount' ? '收益金额' : '收入记录数'
-                    ]}
-                  />
-                  <Line type="monotone" dataKey="amount" stroke="#1890ff" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-      {/* ROI分析表格 */}
-      {assetsStatistics.roi_analysis && assetsStatistics.roi_analysis.length > 0 && (
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col span={24}>
-            <Card title="资产ROI分析" extra={
-              <Text type="secondary">点击资产名称可查看详细收益记录</Text>
-            }>
-              <Table
-                columns={roiColumns}
-                dataSource={assetsStatistics.roi_analysis}
-                rowKey="asset_id"
-                pagination={{ pageSize: 10 }}
-                onRow={(record) => ({
-                  onClick: () => {
-                    // 跳转到资产收益管理页面
-                    window.open(`/assets/${record.asset_id}/income`, '_blank')
-                  },
-                  style: { cursor: 'pointer' }
-                })}
-              />
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-      {/* 顶级收益资产 */}
-      {assetsStatistics.top_earning_assets && assetsStatistics.top_earning_assets.length > 0 && (
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col span={24}>
-            <Card title={
-              <span>
-                <TrophyOutlined style={{ color: '#faad14', marginRight: '8px' }} />
-                TOP 5 收益资产
-              </span>
-            }>
-              <Row gutter={[16, 16]}>
-                {assetsStatistics.top_earning_assets.map((asset, index) => (
-                  <Col key={asset.asset_id} xs={24} sm={12} md={8} lg={4}>
-                    <Card 
-                      size="small" 
-                      style={{ 
-                        borderColor: index === 0 ? '#faad14' : '#d9d9d9',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => window.open(`/assets/${asset.asset_id}/income`, '_blank')}
-                    >
-                      <div>
-                        {index === 0 && <TrophyOutlined style={{ color: '#faad14', marginRight: '4px' }} />}
-                        <Text strong>{asset.asset_name}</Text>
-                        <br />
-                        <Text type="secondary">ROI: </Text>
-                        <Tag color={asset.roi >= 10 ? 'green' : asset.roi >= 5 ? 'orange' : 'red'}>
-                          {asset.roi.toFixed(2)}%
-                        </Tag>
-                        <br />
-                        <Text type="secondary">收益: ¥{asset.total_income.toFixed(2)}</Text>
-                      </div>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-      {/* 即将完全折旧提醒 */}
-      {assetsStatistics.expiring_assets.length > 0 && (
-        <Card 
-          title={
-            <span>
-              <AlertOutlined style={{ color: '#faad14', marginRight: '8px' }} />
-              即将完全折旧提醒
-            </span>
-          }
-          style={{ marginBottom: 24, borderColor: '#faad14' }}
-        >
-          <Row gutter={[16, 16]}>
-            {assetsStatistics.expiring_assets.map(asset => (
-              <Col key={asset.id} xs={24} sm={12} md={8} lg={6}>
-                <Card size="small" style={{ borderColor: '#faad14' }}>
-                  <div>
-                    <Text strong>{asset.name}</Text>
-                    <br />
-                    <Text type="secondary">{asset.asset_code}</Text>
-                    <br />
-                    <Tag color="orange">剩余{asset.remaining_months}个月</Tag>
-                  </div>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </Card>
-      )}
-
-      {/* 分类详细统计 */}
-      <Card title="分类详细统计">
-        <Row gutter={[16, 16]}>
-          {assetsStatistics.category_distribution.map(category => (
-            <Col key={category.category_name} xs={24} sm={12} md={8} lg={6}>
-              <Card size="small">
+      {/* 检查 assetsStatistics 是否有效 */}
+      {!assetsStatistics?.overview ? (
+        <Alert
+          message="暂无资产数据"
+          description="请先添加资产信息"
+          type="info"
+          showIcon
+          style={{ marginBottom: 24 }}
+        />
+      ) : (
+        <>
+          {/* 核心指标卡片 */}
+          <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
                 <Statistic
-                  title={category.category_name}
-                  value={category.count}
+                  title="资产总数"
+                  value={assetsStatistics.overview.total_assets}
+                  prefix={<BankOutlined />}
+                  valueStyle={{ color: '#1890ff' }}
                   suffix="个"
                 />
-                <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
-                  价值：¥{category.total_value.toFixed(2)}
-                </div>
               </Card>
             </Col>
-          ))}
-        </Row>
-      </Card>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <Statistic
+                  title="原值总计"
+                  value={assetsStatistics.overview.total_original_value}
+                  precision={2}
+                  prefix={<DollarOutlined />}
+                  suffix="元"
+                  valueStyle={{ color: '#52c41a' }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <Statistic
+                  title="当前价值"
+                  value={assetsStatistics.overview.total_current_value}
+                  precision={2}
+                  prefix={<TrophyOutlined />}
+                  suffix="元"
+                  valueStyle={{ color: '#faad14' }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <Statistic
+                  title="累计折旧"
+                  value={assetsStatistics.overview.total_accumulated_depreciation}
+                  precision={2}
+                  prefix={<ClockCircleOutlined />}
+                  suffix="元"
+                  valueStyle={{ color: '#f5222d' }}
+                />
+              </Card>
+            </Col>
+          </Row>
+
+          {/* 状态分布 */}
+          {assetsStatistics.status_distribution && assetsStatistics.status_distribution.length > 0 && (
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+              <Col span={24}>
+                <Card title={<><PieChartOutlined /> 资产状态分布</>}>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={assetsStatistics.status_distribution.map(item => ({
+                          name: getStatusText(item.status),
+                          value: item.count
+                        }))}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value }) => `${name}: ${value}个`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {assetsStatistics.status_distribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Card>
+              </Col>
+            </Row>
+          )}
+        </>
+      )}
     </Spin>
   )
 }
