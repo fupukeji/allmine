@@ -66,3 +66,14 @@ build/
 # Data
 data/
 backup/
+
+# Process ID files
+*.pid
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*~

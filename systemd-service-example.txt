@@ -1,0 +1,82 @@
+# TimeValue Systemd 服务配置示例
+# 使用systemd管理TimeValue服务（可选）
+
+## 后端服务配置
+# 文件路径: /etc/systemd/system/timevalue-backend.service
+
+[Unit]
+Description=TimeValue Backend Service
+After=network.target
+
+[Service]
+Type=simple
+User=你的用户名
+WorkingDirectory=/path/to/timevalue/backend
+Environment="PATH=/path/to/timevalue/backend/venv/bin"
+ExecStart=/path/to/timevalue/backend/venv/bin/python app.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/path/to/timevalue/logs/backend.log
+StandardError=append:/path/to/timevalue/logs/backend-error.log
+
+[Install]
+WantedBy=multi-user.target
+
+
+## 前端服务配置
+# 文件路径: /etc/systemd/system/timevalue-frontend.service
+
+[Unit]
+Description=TimeValue Frontend Service
+After=network.target
+
+[Service]
+Type=simple
+User=你的用户名
+WorkingDirectory=/path/to/timevalue/frontend
+ExecStart=/usr/bin/npm run preview -- --host 0.0.0.0 --port 3000
+Restart=always
+RestartSec=10
+StandardOutput=append:/path/to/timevalue/logs/frontend.log
+StandardError=append:/path/to/timevalue/logs/frontend-error.log
+
+[Install]
+WantedBy=multi-user.target
+
+
+## 使用方法:
+
+# 1. 复制服务配置文件到systemd目录
+sudo cp timevalue-backend.service /etc/systemd/system/
+sudo cp timevalue-frontend.service /etc/systemd/system/
+
+# 2. 修改配置文件中的路径和用户名
+sudo nano /etc/systemd/system/timevalue-backend.service
+sudo nano /etc/systemd/system/timevalue-frontend.service
+
+# 3. 重新加载systemd配置
+sudo systemctl daemon-reload
+
+# 4. 启用服务（开机自启）
+sudo systemctl enable timevalue-backend
+sudo systemctl enable timevalue-frontend
+
+# 5. 启动服务
+sudo systemctl start timevalue-backend
+sudo systemctl start timevalue-frontend
+
+# 6. 查看服务状态
+sudo systemctl status timevalue-backend
+sudo systemctl status timevalue-frontend
+
+# 7. 查看日志
+sudo journalctl -u timevalue-backend -f
+sudo journalctl -u timevalue-frontend -f
+
+# 8. 停止服务
+sudo systemctl stop timevalue-backend
+sudo systemctl stop timevalue-frontend
+
+# 9. 重启服务
+sudo systemctl restart timevalue-backend
+sudo systemctl restart timevalue-frontend
