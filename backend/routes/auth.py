@@ -86,7 +86,7 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        # 为新用户初始化默认分类（使用层级结构）
+        # 初始化默认分类
         initialize_user_categories(user.id)
         
         return jsonify({
@@ -357,7 +357,7 @@ def reset_database():
         
         db.session.commit()
         
-        # 为当前用户重新创建默认分类（使用层级结构）
+        # 重新创建默认分类
         initialize_user_categories(user.id)
         
         return jsonify({

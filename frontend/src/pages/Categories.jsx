@@ -49,31 +49,26 @@ const Categories = () => {
     fetchCategories()
   }, [])
 
-  // 将平面数据转换为树形结构
   const buildTree = (flatData) => {
-    const tree = []
     const map = {}
+    const tree = []
     
-    // 创建映射
     flatData.forEach(item => {
       map[item.id] = { ...item, children: [] }
     })
     
-    // 构建树
     flatData.forEach(item => {
-      if (item.parent_id) {
-        if (map[item.parent_id]) {
-          map[item.parent_id].children.push(map[item.id])
-        }
+      const node = map[item.id]
+      if (item.parent_id && map[item.parent_id]) {
+        map[item.parent_id].children.push(node)
       } else {
-        tree.push(map[item.id])
+        tree.push(node)
       }
     })
     
-    // 清理空的 children 数组，避免展开按钮显示问题
     const cleanEmptyChildren = (nodes) => {
       nodes.forEach(node => {
-        if (node.children && node.children.length > 0) {
+        if (node.children?.length > 0) {
           cleanEmptyChildren(node.children)
         } else {
           delete node.children
@@ -85,7 +80,6 @@ const Categories = () => {
     return tree
   }
 
-  // 构建 TreeSelect 的数据
   const buildTreeSelectData = (categories, level = 0) => {
     return categories.map(cat => ({
       value: cat.id,
@@ -95,8 +89,8 @@ const Categories = () => {
           {cat.name}
         </Space>
       ),
-      disabled: level >= 2, // 最多3级，所以第3级不能再有子级
-      children: cat.children && cat.children.length > 0 
+      disabled: level >= 2,
+      children: cat.children?.length > 0 
         ? buildTreeSelectData(cat.children, level + 1) 
         : undefined
     }))
@@ -111,11 +105,10 @@ const Categories = () => {
         const tree = buildTree(response.data)
         setTreeData(tree)
         
-        // 自动展开所有有子节点的分类
         const expandKeys = []
         const collectExpandKeys = (nodes) => {
           nodes.forEach(node => {
-            if (node.children && node.children.length > 0) {
+            if (node.children?.length > 0) {
               expandKeys.push(node.id)
               collectExpandKeys(node.children)
             }
@@ -170,17 +163,17 @@ const Categories = () => {
       title: '初始化默认分类',
       content: (
         <div>
-          <p>将为您添加预设的两级分类体系：</p>
+          <p>将添加预设的两级分类体系：</p>
           <ul style={{ paddingLeft: 20 }}>
             <li>8个一级分类（固定资产、金融资产等）</li>
             <li>38个二级分类（房产、车辆、股票等）</li>
           </ul>
-          <p style={{ color: '#52c41a', marginTop: 12 }}>
-            ✔️ 新的默认分类将与您现有的分类并存，不会删除现有分类。
-          </p>
-          <p style={{ color: '#faad14', marginTop: 8 }}>
-            ⚠️ 如果已存在同名分类，将自动跳过。
-          </p>
+          <Text type="success" style={{ display: 'block', marginTop: 12 }}>
+            ✔️ 新分类将与现有分类并存，不会删除现有数据
+          </Text>
+          <Text type="warning" style={{ display: 'block', marginTop: 8 }}>
+            ⚠️ 同名分类将自动跳过
+          </Text>
         </div>
       ),
       okText: '确认初始化',
@@ -189,19 +182,15 @@ const Categories = () => {
       onOk: async () => {
         try {
           setLoading(true)
-          // 发送force=true强制初始化
           const response = await initializeCategories({ force: true })
           if (response.code === 200) {
-            message.success('默认分类初始化成功！')
-            fetchCategories()
+            message.success('默认分类初始化成功')
           } else {
             message.info(response.message || '初始化完成')
-            fetchCategories() // 即使有警告也刷新列表
           }
+          fetchCategories()
         } catch (error) {
-          console.error('初始化分类失败:', error)
-          const errorMsg = error.response?.data?.message || '初始化失败'
-          message.error(errorMsg)
+          message.error(error.response?.data?.message || '初始化失败')
         } finally {
           setLoading(false)
         }
@@ -302,7 +291,6 @@ const Categories = () => {
       key: 'action',
       width: 200,
       render: (_, record) => {
-        // 计算当前层级（0=顶级, 1=二级, 2=三级）
         const getLevel = (cat) => {
           if (!cat.parent_id) return 0
           const parent = categories.find(c => c.id === cat.parent_id)
@@ -312,7 +300,7 @@ const Categories = () => {
         
         return (
           <Space size="small">
-            {level < 2 && ( // 只有顶级和二级能添加子级
+            {level < 2 && (
               <Tooltip title="添加子分类">
                 <Button
                   type="link"
@@ -427,7 +415,7 @@ const Categories = () => {
           <Form.Item
             label="父级分类"
             name="parent_id"
-            help="选择父级分类可创建层级结构，最多支持3级"
+            help="选择父级可创建层级结构，最多2级"
           >
             <TreeSelect
               placeholder="不选择则为顶级分类"
