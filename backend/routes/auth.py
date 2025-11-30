@@ -346,8 +346,23 @@ def reset_database():
         db.session.query(AssetIncome).delete()
         db.session.query(FixedAsset).delete()
         db.session.query(Project).delete()
-        db.session.query(Category).delete()
         db.session.query(AIReport).delete()
+        
+        # 先删除所有子分类，再删除父分类
+        # 获取所有分类并按层级倒序删除
+        all_categories = db.session.query(Category).all()
+        # 按层级深度排序（深度大的先删除）
+        categories_by_level = {}
+        for cat in all_categories:
+            level = cat.get_level()
+            if level not in categories_by_level:
+                categories_by_level[level] = []
+            categories_by_level[level].append(cat)
+        
+        # 从最深层级开始删除
+        for level in sorted(categories_by_level.keys(), reverse=True):
+            for cat in categories_by_level[level]:
+                db.session.delete(cat)
         
         # 删除所有非管理员用户
         db.session.query(User).filter(User.role != 'admin').delete()
@@ -370,4 +385,101 @@ def reset_database():
         return jsonify({
             'code': 500,
             'message': f'清空数据库失败：{str(e)}'
+        }), 500
+
+@auth_bp.route('/deactivate-account', methods=['POST'])
+@jwt_required()
+def deactivate_account():
+    """用户注销自己的账户 - 需要输入用户名和密码确认"""
+    try:
+        user_id = int(get_jwt_identity())
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({
+                'code': 404,
+                'message': '用户不存在'
+            }), 404
+        
+        data = request.get_json()
+        confirm_username = data.get('username', '').strip()
+        confirm_password = data.get('password', '')
+        
+        # 验证必填字段
+        if not confirm_username or not confirm_password:
+            return jsonify({
+                'code': 400,
+                'message': '请输入用户名和密码进行确认'
+            }), 400
+        
+        # 验证用户名是否匹配
+        if confirm_username != user.username:
+            return jsonify({
+                'code': 400,
+                'message': '输入的用户名与当前用户不匹配'
+            }), 400
+        
+        # 验证密码
+        if not user.check_password(confirm_password):
+            return jsonify({
+                'code': 401,
+                'message': '密码错误'
+            }), 401
+        
+        # 删除用户的所有关联数据
+        from models.project import Project
+        from models.category import Category
+        from models.fixed_asset import FixedAsset
+        from models.asset_income import AssetIncome
+        from models.asset_maintenance import AssetMaintenance, MaintenanceReminder
+        from models.ai_report import AIReport
+        
+        # 删除该用户的所有固定资产相关数据
+        assets = FixedAsset.query.filter_by(user_id=user.id).all()
+        for asset in assets:
+            # 删除资产的收入记录
+            AssetIncome.query.filter_by(asset_id=asset.id).delete()
+            # 删除资产的维护记录
+            AssetMaintenance.query.filter_by(asset_id=asset.id).delete()
+            # 删除资产的维护提醒
+            MaintenanceReminder.query.filter_by(asset_id=asset.id).delete()
+        
+        # 删除该用户的所有固定资产
+        FixedAsset.query.filter_by(user_id=user.id).delete()
+        
+        # 删除该用户的所有虚拟资产（项目）
+        Project.query.filter_by(user_id=user.id).delete()
+        
+        # 删除该用户的所有分类（按层级倒序删除）
+        user_categories = Category.query.filter_by(user_id=user.id).all()
+        categories_by_level = {}
+        for cat in user_categories:
+            level = cat.get_level()
+            if level not in categories_by_level:
+                categories_by_level[level] = []
+            categories_by_level[level].append(cat)
+        
+        for level in sorted(categories_by_level.keys(), reverse=True):
+            for cat in categories_by_level[level]:
+                db.session.delete(cat)
+        
+        # 删除该用户的AI报告
+        AIReport.query.filter_by(user_id=user.id).delete()
+        
+        username = user.username
+        
+        # 删除用户
+        db.session.delete(user)
+        db.session.commit()
+        
+        return jsonify({
+            'code': 200,
+            'message': f'账户 {username} 及其所有数据已注销'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'code': 500,
+            'message': f'注销账户失败：{str(e)}'
         }), 500

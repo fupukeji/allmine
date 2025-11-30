@@ -350,57 +350,136 @@ const Categories = () => {
   ]
 
   return (
-    <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
-        <Col>
-          <Space>
-            <Title level={2} style={{ margin: 0 }}>分类管理</Title>
-            {categories.length > 0 && treeData.length > 0 && (
-              <Tag color="blue">共 {categories.length} 个分类</Tag>
-            )}
-          </Space>
-        </Col>
-        <Col>
-          <Space>
-            <Tooltip title="如果您是老用户，可以初始化预设的层级分类体系">
+    <div style={{ padding: '24px', background: '#f5f7fa', minHeight: 'calc(100vh - 64px)' }}>
+      {/* 页面头部 */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '20px',
+        padding: '32px',
+        marginBottom: '24px',
+        boxShadow: '0 20px 60px rgba(102, 126, 234, 0.3)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* 浮动装饰 */}
+        <div style={{ 
+          position: 'absolute', 
+          top: '-80px', 
+          right: '-80px', 
+          width: '250px', 
+          height: '250px', 
+          background: 'rgba(255,255,255,0.1)', 
+          borderRadius: '50%',
+          animation: 'float 6s ease-in-out infinite'
+        }} />
+        <div style={{ 
+          position: 'absolute', 
+          bottom: '-60px', 
+          left: '-60px', 
+          width: '200px', 
+          height: '200px', 
+          background: 'rgba(255,255,255,0.08)', 
+          borderRadius: '50%',
+          animation: 'float 8s ease-in-out infinite'
+        }} />
+        
+        <Row justify="space-between" align="middle" style={{ position: 'relative', zIndex: 1 }}>
+          <Col>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{
+                width: '60px',
+                height: '60px',
+                background: 'rgba(255,255,255,0.2)',
+                borderRadius: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '16px',
+                backdropFilter: 'blur(10px)'
+              }}>
+                <FolderOutlined style={{ fontSize: '32px', color: 'white' }} />
+              </div>
+              <div>
+                <Title level={2} style={{ color: 'white', margin: 0, fontWeight: 'bold' }}>
+                  分类管理
+                </Title>
+                {categories.length > 0 && (
+                  <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', marginTop: '4px' }}>
+                    共 {categories.length} 个分类，支持多级层级结构
+                  </div>
+                )}
+              </div>
+            </div>
+          </Col>
+          <Col>
+            <Space>
               <Button 
                 onClick={handleInitialize}
                 loading={loading}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'white',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '10px',
+                  fontWeight: 500
+                }}
               >
                 初始化默认分类
               </Button>
-            </Tooltip>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={() => handleAdd()}
-            >
-              添加分类
-            </Button>
-          </Space>
-        </Col>
-      </Row>
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={() => handleAdd()}
+                style={{
+                  background: 'white',
+                  color: '#667eea',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontWeight: 600,
+                  boxShadow: '0 4px 12px rgba(255,255,255,0.3)'
+                }}
+              >
+                添加分类
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+      </div>
 
       {/* 树形表格展示 */}
-      <Table
-        dataSource={treeData}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        pagination={false}
-        expandable={{
-          expandedRowKeys: expandedRowKeys,
-          onExpandedRowsChange: (keys) => setExpandedRowKeys(keys),
-          childrenColumnName: 'children'
-        }}
-      />
+      <div style={{
+        background: 'white',
+        borderRadius: '20px',
+        padding: '24px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+      }}>
+        <Table
+          dataSource={treeData}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
+          pagination={false}
+          expandable={{
+            expandedRowKeys: expandedRowKeys,
+            onExpandedRowsChange: (keys) => setExpandedRowKeys(keys),
+            childrenColumnName: 'children'
+          }}
+        />
+      </div>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(20px); }
+        }
+      `}</style>
 
       <Modal
         title={editingCategory ? '编辑分类' : '添加分类'}
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={handleModalCancel}
-        destroyOnClose
         width={600}
       >
         <Form

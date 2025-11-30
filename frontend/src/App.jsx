@@ -98,7 +98,7 @@ function App() {
           <>
             <Route path="/" element={<AppLayout onLogout={handleLogout} userInfo={userInfo} />}>
               <Route index element={<Dashboard />} />
-              <Route path="projects" element={<Projects />} />
+              <Route path="virtual-assets" element={<Projects />} />
               <Route path="categories" element={<Categories />} />
               <Route path="assets" element={<FixedAssets />} />
               <Route path="assets/:assetId/income" element={<AssetIncomeManagement />} />

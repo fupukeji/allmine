@@ -55,6 +55,7 @@ class ReportWorkflowService:
             "compressed_text": None,
             "previous_data": None,
             "comparison_text": None,
+            "intelligent_insights": None,  # 新增
             "ai_insights": None,
             "report_content": None,
             "quality_score": None,

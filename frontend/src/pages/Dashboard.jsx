@@ -297,7 +297,7 @@ const Dashboard = () => {
   const warnings = calculateWarnings()
 
   return (
-    <div style={{ padding: '0 0 24px 0' }}>
+    <div style={{ padding: '0 0 24px 0', background: '#f5f7fa', minHeight: 'calc(100vh - 64px)', margin: '-24px', padding: '24px' }}>
       <style>
         {`
           @keyframes pulse {
@@ -308,50 +308,96 @@ const Dashboard = () => {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
           }
+          @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+          }
           .dashboard-card {
             animation: slideIn 0.5s ease-out;
+          }
+          .hover-lift {
+            transition: all 0.3s ease;
+          }
+          .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
           }
         `}
       </style>
 
-      {/* 顶部控制台 */}
+      {/* 顶部控制台 - 优化版 */}
       <div style={{
-        background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         borderRadius: '20px',
-        padding: '24px',
+        padding: '32px',
         marginBottom: 24,
         color: 'white',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+        boxShadow: '0 10px 40px rgba(102, 126, 234, 0.3)',
         position: 'relative',
         overflow: 'hidden'
       }}>
-        <div style={{ position: 'absolute', top: -50, right: -50, width: 200, height: 200, background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
-        <div style={{ position: 'absolute', bottom: -30, left: -30, width: 150, height: 150, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
+        {/* 背景装饰 */}
+        <div style={{ 
+          position: 'absolute', 
+          top: '-80px', 
+          right: '-80px', 
+          width: '250px', 
+          height: '250px', 
+          background: 'rgba(255,255,255,0.1)', 
+          borderRadius: '50%',
+          animation: 'float 6s ease-in-out infinite'
+        }} />
+        <div style={{ 
+          position: 'absolute', 
+          bottom: '-60px', 
+          left: '-60px', 
+          width: '200px', 
+          height: '200px', 
+          background: 'rgba(255,255,255,0.08)', 
+          borderRadius: '50%',
+          animation: 'float 8s ease-in-out infinite reverse'
+        }} />
         
-        <Row align="middle" justify="space-between">
+        <Row align="middle" justify="space-between" style={{ position: 'relative', zIndex: 1 }}>
           <Col>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <DashboardOutlined style={{ fontSize: 48 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <div style={{
+                width: '70px',
+                height: '70px',
+                background: 'rgba(255,255,255,0.2)',
+                borderRadius: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '36px',
+                backdropFilter: 'blur(10px)'
+              }}>
+                <DashboardOutlined />
+              </div>
               <div>
-                <Title level={2} style={{ color: 'white', margin: 0 }}>资产驾驶舱</Title>
-                <Text style={{ color: 'rgba(255,255,255,0.8)' }}>实时监控您的资产运行状况</Text>
+                <Title level={2} style={{ color: 'white', margin: 0, fontWeight: 'bold' }}>
+                  资产驾驶舱
+                </Title>
+                <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '15px' }}>
+                  💰 恒产生金 · 实时监控您的资产运行状况
+                </Text>
               </div>
             </div>
           </Col>
           <Col>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 24, fontWeight: 'bold' }}>
+              <div style={{ fontSize: '28px', fontWeight: 'bold', letterSpacing: '1px' }}>
                 {currentTime.toLocaleTimeString('zh-CN')}
               </div>
-              <div style={{ fontSize: 14, opacity: 0.8 }}>
+              <div style={{ fontSize: '14px', opacity: 0.9, marginTop: '4px' }}>
                 {currentTime.toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
             </div>
           </Col>
         </Row>
 
-        {/* 警告灯板 */}
-        <Row gutter={16} style={{ marginTop: 24 }}>
+        {/* 警告灯板 - 优化版 */}
+        <Row gutter={16} style={{ marginTop: 28, position: 'relative', zIndex: 1 }}>
           <Col span={8}>
             <WarningLight 
               active={warnings.criticals > 0} 
@@ -466,17 +512,23 @@ const Dashboard = () => {
         {/* 虚拟资产统计 */}
         <Col xs={24} lg={12}>
           <Card 
+            className="hover-lift"
             title={
               <span>
-                <AppstoreOutlined style={{ marginRight: 8, color: '#ff6b6b' }} />
-                随风而逝 - 虚拟资产
+                <AppstoreOutlined style={{ marginRight: 8, color: '#667eea' }} />
+                💨 随风而逝 - 虚拟资产
               </span>
             }
             loading={loading}
             bordered={false}
             style={{ 
               borderRadius: 16,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.08)'
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              border: '1px solid #f0f0f0'
+            }}
+            headStyle={{
+              borderBottom: '2px solid #667eea',
+              fontWeight: 'bold'
             }}
           >
             <Row gutter={[16, 16]}>
@@ -539,17 +591,23 @@ const Dashboard = () => {
         {/* 固定资产统计 */}
         <Col xs={24} lg={12}>
           <Card 
+            className="hover-lift"
             title={
               <span>
-                <ShoppingOutlined style={{ marginRight: 8, color: '#5c7cfa' }} />
-                恒产生金 - 固定资产
+                <ShoppingOutlined style={{ marginRight: 8, color: '#764ba2' }} />
+                🏦 恒产生金 - 固定资产
               </span>
             }
             loading={loading}
             bordered={false}
             style={{ 
               borderRadius: 16,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.08)'
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              border: '1px solid #f0f0f0'
+            }}
+            headStyle={{
+              borderBottom: '2px solid #764ba2',
+              fontWeight: 'bold'
             }}
           >
             <Row gutter={[16, 16]}>
@@ -644,19 +702,26 @@ const Dashboard = () => {
         </Col>
       </Row>
 
-      {/* 紧急关注区域 */}
+      {/* 紧急关注区域 - 优化版 */}
       {(warnings.criticals > 0 || warnings.warnings > 0) && (
         <Card 
+          className="hover-lift"
           title={
             <span>
               <WarningOutlined style={{ marginRight: 8, color: '#ff4d4f' }} />
-              需要关注的项目
+              ⚠️ 需要关注的项目
             </span>
           }
           style={{ 
             marginTop: 16,
             borderRadius: 16,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08)'
+            boxShadow: '0 4px 20px rgba(255, 77, 79, 0.15)',
+            border: '2px solid #ff4d4f'
+          }}
+          headStyle={{
+            background: 'linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%)',
+            borderBottom: '2px solid #ff4d4f',
+            fontWeight: 'bold'
           }}
           bordered={false}
         >

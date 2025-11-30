@@ -16,7 +16,8 @@ import {
   Col,
   Statistic,
   Typography,
-  Tooltip
+  Tooltip,
+  Alert
 } from 'antd'
 import {
   UserOutlined,
@@ -36,6 +37,8 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [deletingUser, setDeletingUser] = useState(null)
   const [stats, setStats] = useState({})
   const [pagination, setPagination] = useState({
     current: 1,
@@ -48,6 +51,7 @@ const UserManagement = () => {
     role: ''
   })
   const [form] = Form.useForm()
+  const [deleteForm] = Form.useForm()
 
   useEffect(() => {
     fetchUsers()
@@ -120,17 +124,37 @@ const UserManagement = () => {
     })
   }
 
-  const handleDeleteUser = async (userId) => {
+  const handleDeleteUser = async (user) => {
+    setDeletingUser(user)
+    setDeleteModalVisible(true)
+    deleteForm.resetFields()
+  }
+
+  const confirmDeleteUser = async () => {
     try {
-      const response = await deleteUser(userId)
+      const values = await deleteForm.validateFields()
+      const response = await deleteUser(deletingUser.id, {
+        username: values.username,
+        password: values.password
+      })
       if (response.code === 200) {
-        message.success('用户删除成功')
+        message.success(response.message)
+        setDeleteModalVisible(false)
+        setDeletingUser(null)
+        deleteForm.resetFields()
         fetchUsers()
         fetchStats()
       }
     } catch (error) {
       console.error('删除用户失败:', error)
-      message.error('删除用户失败')
+      if (error.response?.data?.message) {
+        message.error(error.response.data.message)
+      } else if (error.errorFields) {
+        // 表单验证失败
+        message.error('请填写完整信息')
+      } else {
+        message.error('删除用户失败')
+      }
     }
   }
 
@@ -271,9 +295,9 @@ const UserManagement = () => {
           
           <Popconfirm
             title="确定要删除这个用户吗？"
-            description="此操作不可恢复，请确认该用户没有关联的项目或分类。"
-            onConfirm={() => handleDeleteUser(record.id)}
-            okText="确定"
+            description="此操作将清除该用户的所有数据且不可恢复"
+            onConfirm={() => handleDeleteUser(record)}
+            okText="下一步"
             cancelText="取消"
           >
             <Tooltip title="删除用户">
@@ -477,6 +501,88 @@ const UserManagement = () => {
             />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 删除用户确认弹窗 */}
+      <Modal
+        title="删除用户确认"
+        open={deleteModalVisible}
+        onOk={confirmDeleteUser}
+        onCancel={() => {
+          setDeleteModalVisible(false)
+          setDeletingUser(null)
+          deleteForm.resetFields()
+        }}
+        okText="确认删除"
+        cancelText="取消"
+        okButtonProps={{ danger: true }}
+        width={500}
+      >
+        {deletingUser && (
+          <>
+            <Alert
+              message="警告：此操作不可恢复！"
+              description={
+                <div>
+                  <p>删除用户 <strong>{deletingUser.username}</strong> 将清除以下所有数据：</p>
+                  <ul style={{ marginTop: 8, paddingLeft: 20 }}>
+                    <li>所有虚拟资产（项目）</li>
+                    <li>所有固定资产</li>
+                    <li>所有分类</li>
+                    <li>所有资产收入记录</li>
+                    <li>所有维护记录</li>
+                    <li>所有AI报告</li>
+                  </ul>
+                  <p style={{ marginTop: 8, color: '#ff4d4f', fontWeight: 'bold' }}>
+                    请谨慎操作，此操作无法撤销！
+                  </p>
+                </div>
+              }
+              type="warning"
+              showIcon
+              style={{ marginBottom: 24 }}
+            />
+            
+            <Form
+              form={deleteForm}
+              layout="vertical"
+            >
+              <Form.Item
+                label="请输入要删除的用户名进行确认"
+                name="username"
+                rules={[
+                  { required: true, message: '请输入用户名' },
+                  {
+                    validator: (_, value) => {
+                      if (value && value !== deletingUser.username) {
+                        return Promise.reject('用户名不匹配')
+                      }
+                      return Promise.resolve()
+                    }
+                  }
+                ]}
+              >
+                <Input
+                  placeholder={`请输入: ${deletingUser.username}`}
+                  prefix={<UserOutlined />}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="请输入您的管理员密码"
+                name="password"
+                rules={[
+                  { required: true, message: '请输入您的密码' }
+                ]}
+              >
+                <Input.Password
+                  placeholder="请输入您的管理员密码"
+                  prefix={<DeleteOutlined />}
+                />
+              </Form.Item>
+            </Form>
+          </>
+        )}
       </Modal>
     </div>
   )

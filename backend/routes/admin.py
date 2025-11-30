@@ -316,7 +316,7 @@ def toggle_user_status(user_id):
 @admin_bp.route('/admin/users/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):
-    """删除用户（仅管理员）"""
+    """删除用户（仅管理员）- 需要验证用户名和密码"""
     try:
         # 检查权限
         auth_result = require_admin()
@@ -336,23 +336,84 @@ def delete_user(user_id):
         if target_user.id == current_user.id:
             return jsonify({
                 'code': 400,
-                'message': '不能删除自己的账户'
+                'message': '不能删除自己的账户，请使用注销功能'
             }), 400
         
-        # 检查是否有关联数据
-        if target_user.projects or target_user.categories:
+        # 获取请求数据
+        data = request.get_json()
+        confirm_username = data.get('username', '').strip()
+        confirm_password = data.get('password', '')
+        
+        # 验证必填字段
+        if not confirm_username or not confirm_password:
             return jsonify({
                 'code': 400,
-                'message': '该用户还有关联的项目或分类，请先处理这些数据'
+                'message': '请输入要删除的用户名和管理员密码'
             }), 400
         
+        # 验证用户名是否匹配
+        if confirm_username != target_user.username:
+            return jsonify({
+                'code': 400,
+                'message': '输入的用户名与要删除的用户不匹配'
+            }), 400
+        
+        # 验证管理员密码
+        if not current_user.check_password(confirm_password):
+            return jsonify({
+                'code': 401,
+                'message': '管理员密码错误'
+            }), 401
+        
+        # 删除用户的所有关联数据
+        from models.project import Project
+        from models.category import Category
+        from models.fixed_asset import FixedAsset
+        from models.asset_income import AssetIncome
+        from models.asset_maintenance import AssetMaintenance, MaintenanceReminder
+        from models.ai_report import AIReport
+        
+        # 删除该用户的所有固定资产相关数据
+        assets = FixedAsset.query.filter_by(user_id=target_user.id).all()
+        for asset in assets:
+            # 删除资产的收入记录
+            AssetIncome.query.filter_by(asset_id=asset.id).delete()
+            # 删除资产的维护记录
+            AssetMaintenance.query.filter_by(asset_id=asset.id).delete()
+            # 删除资产的维护提醒
+            MaintenanceReminder.query.filter_by(asset_id=asset.id).delete()
+        
+        # 删除该用户的所有固定资产
+        FixedAsset.query.filter_by(user_id=target_user.id).delete()
+        
+        # 删除该用户的所有虚拟资产（项目）
+        Project.query.filter_by(user_id=target_user.id).delete()
+        
+        # 删除该用户的所有分类（按层级倒序删除）
+        user_categories = Category.query.filter_by(user_id=target_user.id).all()
+        categories_by_level = {}
+        for cat in user_categories:
+            level = cat.get_level()
+            if level not in categories_by_level:
+                categories_by_level[level] = []
+            categories_by_level[level].append(cat)
+        
+        for level in sorted(categories_by_level.keys(), reverse=True):
+            for cat in categories_by_level[level]:
+                db.session.delete(cat)
+        
+        # 删除该用户的AI报告
+        AIReport.query.filter_by(user_id=target_user.id).delete()
+        
         username = target_user.username
+        
+        # 删除用户
         db.session.delete(target_user)
         db.session.commit()
         
         return jsonify({
             'code': 200,
-            'message': f'用户 {username} 删除成功'
+            'message': f'用户 {username} 及其所有数据已删除'
         })
         
     except Exception as e:

@@ -18,7 +18,8 @@ import {
   Progress,
   Card,
   Statistic,
-  TreeSelect
+  TreeSelect,
+  Tabs
 } from 'antd'
 import { 
   PlusOutlined, 
@@ -26,7 +27,16 @@ import {
   DeleteOutlined,
   EyeOutlined,
   FilterOutlined,
-  FolderOutlined
+  FolderOutlined,
+  BarChartOutlined,
+  RiseOutlined,
+  FallOutlined,
+  ThunderboltOutlined,
+  DollarOutlined,
+  PieChartOutlined,
+  LineChartOutlined,
+  WarningOutlined,
+  ClockCircleOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { 
@@ -41,6 +51,7 @@ import { getCategories } from '../services/categories'
 const { Title } = Typography
 const { TextArea } = Input
 const { Option, OptGroup } = Select
+const { TabPane } = Tabs
 
 // 分类分组定义
 const categoryGroups = {
@@ -88,11 +99,60 @@ const Projects = () => {
   const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [detailModalVisible, setDetailModalVisible] = useState(false)
+  const [statisticsModalVisible, setStatisticsModalVisible] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
   const [selectedProject, setSelectedProject] = useState(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState([])
   const [filters, setFilters] = useState({})
   const [form] = Form.useForm()
+
+  const statistics = React.useMemo(() => {
+    if (projects.length === 0) return null
+    const totalAmount = projects.reduce((sum, p) => sum + p.total_amount, 0)
+    const totalUsed = projects.reduce((sum, p) => sum + p.used_cost, 0)
+    const totalRemaining = projects.reduce((sum, p) => sum + p.remaining_value, 0)
+    const avgProgress = projects.reduce((sum, p) => sum + p.progress, 0) / projects.length
+    const statusDist = projects.reduce((acc, p) => {
+      if (!acc[p.status]) acc[p.status] = { count: 0, value: 0 }
+      acc[p.status].count++
+      acc[p.status].value += p.total_amount
+      return acc
+    }, {})
+    const categoryDist = projects.reduce((acc, p) => {
+      const key = p.category_name || '未分类'
+      if (!acc[key]) acc[key] = { count: 0, value: 0, remaining: 0 }
+      acc[key].count++
+      acc[key].value += p.total_amount
+      acc[key].remaining += p.remaining_value
+      return acc
+    }, {})
+    const riskProjects = projects.filter(p => {
+      if (!p.end_time) return false
+      const daysRemaining = dayjs(p.end_time).diff(dayjs(), 'day')
+      return daysRemaining <= 30 && daysRemaining > 0 && p.remaining_value > 100
+    })
+    const highConsumption = projects.filter(p => {
+      if (!p.end_time || !p.start_time) return false
+      const totalDays = dayjs(p.end_time).diff(dayjs(p.start_time), 'day')
+      const usedDays = dayjs().diff(dayjs(p.start_time), 'day')
+      const timeProgress = (usedDays / totalDays) * 100
+      return p.progress > 70 && timeProgress < 50
+    })
+    return {
+      overview: {
+        totalProjects: projects.length,
+        totalAmount,
+        totalUsed,
+        totalRemaining,
+        avgProgress,
+        activeCount: projects.filter(p => p.status === 'active').length
+      },
+      statusDistribution: Object.entries(statusDist).map(([status, data]) => ({ status, ...data })),
+      categoryDistribution: Object.entries(categoryDist).map(([name, data]) => ({ name, ...data })),
+      riskProjects,
+      highConsumption
+    }
+  }, [projects])
 
   // 分组分类
   const groupedCategories = React.useMemo(() => {
@@ -425,13 +485,81 @@ const Projects = () => {
   }
 
   return (
-    <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
-        <Col>
-          <Title level={2}>项目管理</Title>
-        </Col>
-        <Col>
-          <Space>
+    <div style={{ padding: '24px', background: '#f5f7fa', minHeight: 'calc(100vh - 64px)' }}>
+      {/* 页面头部 */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '20px',
+        padding: '32px',
+        marginBottom: '24px',
+        boxShadow: '0 20px 60px rgba(102, 126, 234, 0.3)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* 浮动装饰 */}
+        <div style={{ 
+          position: 'absolute', 
+          top: '-80px', 
+          right: '-80px', 
+          width: '250px', 
+          height: '250px', 
+          background: 'rgba(255,255,255,0.1)', 
+          borderRadius: '50%',
+          animation: 'float 6s ease-in-out infinite'
+        }} />
+        <div style={{ 
+          position: 'absolute', 
+          bottom: '-60px', 
+          left: '-60px', 
+          width: '200px', 
+          height: '200px', 
+          background: 'rgba(255,255,255,0.08)', 
+          borderRadius: '50%',
+          animation: 'float 8s ease-in-out infinite'
+        }} />
+        
+        <Row justify="space-between" align="middle" style={{ position: 'relative', zIndex: 1 }}>
+          <Col>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{
+                width: '60px',
+                height: '60px',
+                background: 'rgba(255,255,255,0.2)',
+                borderRadius: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '16px',
+                backdropFilter: 'blur(10px)'
+              }}>
+                <span style={{ fontSize: '32px' }}>💨</span>
+              </div>
+              <div>
+                <Title level={2} style={{ color: 'white', margin: 0, fontWeight: 'bold' }}>
+                  虚拟资产管理
+                </Title>
+                <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', marginTop: '4px' }}>
+                  随风而逝：记录视频会员、游戏充值、云服务等虚拟消耗资产
+                </div>
+              </div>
+            </div>
+          </Col>
+          <Col>
+            <Space>
+              <Button
+                icon={<BarChartOutlined />}
+                onClick={() => setStatisticsModalVisible(true)}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'white',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '10px',
+                  fontWeight: 500
+                }}
+              >
+                统计分析
+              </Button>
             <Select
               placeholder="筛选分类"
               style={{ width: 200 }}
@@ -474,30 +602,114 @@ const Projects = () => {
                 </Button>
               </Popconfirm>
             )}
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={handleAdd}
-            >
-              添加项目
-            </Button>
-          </Space>
-        </Col>
-      </Row>
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={handleAdd}
+                style={{
+                  background: 'white',
+                  color: '#667eea',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontWeight: 600,
+                  boxShadow: '0 4px 12px rgba(255,255,255,0.3)'
+                }}
+              >
+                添加项目
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+      </div>
 
-      <Table
-        dataSource={projects}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        rowSelection={rowSelection}
-        scroll={{ x: 1200 }}
-        pagination={{
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-        }}
-      />
+      {/* 风险提示区域 */}
+      {statistics && (statistics.riskProjects.length > 0 || statistics.highConsumption.length > 0) && (
+        <Row gutter={16} style={{ marginBottom: '24px' }}>
+          {statistics.riskProjects.length > 0 && (
+            <Col span={12}>
+              <Card
+                size="small"
+                style={{ 
+                  borderColor: '#ff4d4f', 
+                  background: '#fff1f0',
+                  borderRadius: '16px',
+                  boxShadow: '0 4px 12px rgba(255, 77, 79, 0.1)'
+                }}
+                title={
+                  <span style={{ color: '#ff4d4f' }}>
+                    <WarningOutlined style={{ marginRight: '8px' }} />
+                    即将过期项目
+                  </span>
+                }
+              >
+                <Space wrap>
+                  {statistics.riskProjects.map(p => (
+                    <Tag key={p.id} color="error">
+                      {p.name} (剩余{dayjs(p.end_time).diff(dayjs(), 'day')}天，剩余¥{p.remaining_value.toFixed(2)})
+                    </Tag>
+                  ))}
+                </Space>
+              </Card>
+            </Col>
+          )}
+          {statistics.highConsumption.length > 0 && (
+            <Col span={12}>
+              <Card
+                size="small"
+                style={{ 
+                  borderColor: '#faad14', 
+                  background: '#fffbe6',
+                  borderRadius: '16px',
+                  boxShadow: '0 4px 12px rgba(250, 173, 20, 0.1)'
+                }}
+                title={
+                  <span style={{ color: '#faad14' }}>
+                    <ThunderboltOutlined style={{ marginRight: '8px' }} />
+                    异常消耗项目
+                  </span>
+                }
+              >
+                <Space wrap>
+                  {statistics.highConsumption.map(p => (
+                    <Tag key={p.id} color="warning">
+                      {p.name} (消耗进度{p.progress.toFixed(1)}%)
+                    </Tag>
+                  ))}
+                </Space>
+              </Card>
+            </Col>
+          )}
+        </Row>
+      )}
+
+      {/* 数据表格 */}
+      <div style={{
+        background: 'white',
+        borderRadius: '20px',
+        padding: '24px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+      }}>
+        <Table
+          dataSource={projects}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
+          rowSelection={rowSelection}
+          scroll={{ x: 1200 }}
+          pagination={{
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
+        />
+      </div>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(20px); }
+        }
+      `}</style>
 
       {/* 添加/编辑项目模态框 */}
       <Modal
@@ -505,7 +717,6 @@ const Projects = () => {
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={handleModalCancel}
-        destroyOnClose
         width={600}
       >
         <Form
@@ -613,6 +824,506 @@ const Projects = () => {
             />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 统计分析模态框 */}
+      <Modal
+        title={
+          <div style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            padding: '4px 0'
+          }}>
+            <BarChartOutlined style={{ marginRight: '8px', color: '#667eea' }} />
+            虚拟资产统计分析
+          </div>
+        }
+        open={statisticsModalVisible}
+        onCancel={() => setStatisticsModalVisible(false)}
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => setStatisticsModalVisible(false)}
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none'
+            }}
+          >
+            关闭
+          </Button>
+        ]}
+        width={1200}
+        styles={{ body: { padding: '24px', background: '#f5f7fa' } }}
+      >
+        {statistics && (
+          <div style={{ minHeight: '500px' }}>
+            <Tabs
+              defaultActiveKey="1"
+              size="large"
+              tabBarStyle={{
+                background: 'white',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                marginBottom: '16px'
+              }}
+            >
+              <TabPane
+                tab={
+                  <span>
+                    <PieChartOutlined style={{ marginRight: '4px' }} />
+                    总体概览
+                  </span>
+                }
+                key="1"
+              >
+                <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+                  <Col span={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none',
+                        boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)'
+                      }}
+                    >
+                      <Statistic
+                        title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>项目总数</span>}
+                        value={statistics.overview.totalProjects}
+                        suffix="个"
+                        valueStyle={{ color: '#fff', fontSize: '32px', fontWeight: 'bold' }}
+                        prefix={<ClockCircleOutlined style={{ color: 'rgba(255,255,255,0.8)' }} />}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                        border: 'none',
+                        boxShadow: '0 8px 16px rgba(240, 147, 251, 0.3)'
+                      }}
+                    >
+                      <Statistic
+                        title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>总支出</span>}
+                        value={statistics.overview.totalAmount}
+                        precision={2}
+                        suffix="元"
+                        valueStyle={{ color: '#fff', fontSize: '28px', fontWeight: 'bold' }}
+                        prefix={<DollarOutlined style={{ color: 'rgba(255,255,255,0.8)' }} />}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                        border: 'none',
+                        boxShadow: '0 8px 16px rgba(250, 112, 154, 0.3)'
+                      }}
+                    >
+                      <Statistic
+                        title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>已消耗</span>}
+                        value={statistics.overview.totalUsed}
+                        precision={2}
+                        suffix="元"
+                        valueStyle={{ color: '#fff', fontSize: '28px', fontWeight: 'bold' }}
+                        prefix={<FallOutlined style={{ color: 'rgba(255,255,255,0.8)' }} />}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                        border: 'none',
+                        boxShadow: '0 8px 16px rgba(79, 172, 254, 0.3)'
+                      }}
+                    >
+                      <Statistic
+                        title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>剩余价值</span>}
+                        value={statistics.overview.totalRemaining}
+                        precision={2}
+                        suffix="元"
+                        valueStyle={{ color: '#fff', fontSize: '28px', fontWeight: 'bold' }}
+                        prefix={<RiseOutlined style={{ color: 'rgba(255,255,255,0.8)' }} />}
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+
+                <Card
+                  style={{
+                    borderRadius: '12px',
+                    marginBottom: '24px',
+                    border: '1px solid #e8e8e8',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                  }}
+                  title={
+                    <span style={{ fontSize: '16px', fontWeight: 600 }}>
+                      <LineChartOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
+                      整体消耗进度
+                    </span>
+                  }
+                >
+                  <div style={{ padding: '20px 0' }}>
+                    <Progress
+                      percent={statistics.overview.avgProgress}
+                      strokeColor={{
+                        '0%': '#667eea',
+                        '100%': '#764ba2',
+                      }}
+                      strokeWidth={20}
+                      format={(percent) => (
+                        <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                          {percent.toFixed(1)}%
+                        </span>
+                      )}
+                    />
+                    <div style={{
+                      marginTop: '16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      color: '#666',
+                      fontSize: '14px'
+                    }}>
+                      <span>活跃项目：{statistics.overview.activeCount} 个</span>
+                      <span>已消耗：¥{statistics.overview.totalUsed.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </Card>
+
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Card
+                      style={{
+                        borderRadius: '12px',
+                        border: '1px solid #e8e8e8',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        height: '100%'
+                      }}
+                      title={
+                        <span style={{ fontSize: '16px', fontWeight: 600 }}>
+                          <DollarOutlined style={{ marginRight: '8px', color: '#52c41a' }} />
+                          消耗率
+                        </span>
+                      }
+                    >
+                      <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                        <Progress
+                          type="circle"
+                          percent={(statistics.overview.totalUsed / statistics.overview.totalAmount * 100)}
+                          strokeColor={{
+                            '0%': '#52c41a',
+                            '100%': '#f5222d',
+                          }}
+                          strokeWidth={10}
+                          width={150}
+                          format={(percent) => (
+                            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                              {percent.toFixed(0)}%
+                              <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>消耗率</div>
+                            </div>
+                          )}
+                        />
+                        <div style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
+                          <div>总支出：¥{statistics.overview.totalAmount.toFixed(2)}</div>
+                          <div style={{ marginTop: '8px' }}>已消耗：¥{statistics.overview.totalUsed.toFixed(2)}</div>
+                        </div>
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col span={12}>
+                    <Card
+                      style={{
+                        borderRadius: '12px',
+                        border: '1px solid #e8e8e8',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        height: '100%'
+                      }}
+                      title={
+                        <span style={{ fontSize: '16px', fontWeight: 600 }}>
+                          <ThunderboltOutlined style={{ marginRight: '8px', color: '#faad14' }} />
+                          价值保有率
+                        </span>
+                      }
+                    >
+                      <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                        <Progress
+                          type="circle"
+                          percent={(statistics.overview.totalRemaining / statistics.overview.totalAmount * 100)}
+                          strokeColor={{
+                            '0%': '#1890ff',
+                            '100%': '#52c41a',
+                          }}
+                          strokeWidth={10}
+                          width={150}
+                          format={(percent) => (
+                            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                              {percent.toFixed(0)}%
+                              <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>保有率</div>
+                            </div>
+                          )}
+                        />
+                        <div style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
+                          <div>总支出：¥{statistics.overview.totalAmount.toFixed(2)}</div>
+                          <div style={{ marginTop: '8px' }}>剩余：¥{statistics.overview.totalRemaining.toFixed(2)}</div>
+                        </div>
+                      </div>
+                    </Card>
+                  </Col>
+                </Row>
+              </TabPane>
+
+              <TabPane
+                tab={
+                  <span>
+                    <PieChartOutlined style={{ marginRight: '4px' }} />
+                    状态分布
+                  </span>
+                }
+                key="2"
+              >
+                <Row gutter={[16, 16]}>
+                  {statistics.statusDistribution.map((item, index) => (
+                    <Col span={8} key={item.status}>
+                      <Card
+                        hoverable
+                        style={{
+                          borderRadius: '12px',
+                          border: '1px solid #e8e8e8',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                        }}
+                      >
+                        <div style={{ textAlign: 'center' }}>
+                          <Tag
+                            color={getStatusColor(item.status)}
+                            style={{ fontSize: '14px', padding: '6px 16px', marginBottom: '16px', borderRadius: '20px' }}
+                          >
+                            {getStatusText(item.status)}
+                          </Tag>
+                          <div style={{ fontSize: '36px', fontWeight: 'bold', margin: '12px 0' }}>
+                            {item.count}
+                          </div>
+                          <div style={{ color: '#999', fontSize: '14px', marginBottom: '16px' }}>项目数量</div>
+                          <div style={{
+                            background: '#f5f5f5',
+                            borderRadius: '8px',
+                            padding: '12px'
+                          }}>
+                            <div style={{ color: '#666', fontSize: '12px' }}>总价值</div>
+                            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1890ff', marginTop: '4px' }}>
+                              ¥{item.value.toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              </TabPane>
+
+              <TabPane
+                tab={
+                  <span>
+                    <FolderOutlined style={{ marginRight: '4px' }} />
+                    分类分布
+                  </span>
+                }
+                key="3"
+              >
+                <Row gutter={[16, 16]}>
+                  {statistics.categoryDistribution.map((item, index) => (
+                    <Col span={8} key={item.name}>
+                      <Card
+                        hoverable
+                        style={{
+                          borderRadius: '12px',
+                          border: '1px solid #e8e8e8',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                          height: '100%'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+                          <div style={{
+                            width: '8px',
+                            height: '40px',
+                            borderRadius: '4px',
+                            background: `linear-gradient(135deg, ${[
+                              '#667eea', '#f093fb', '#4facfe', '#fa709a',
+                              '#52c41a', '#faad14', '#f5222d', '#722ed1'
+                            ][index % 8]} 0%, ${[
+                              '#764ba2', '#f5576c', '#00f2fe', '#fee140',
+                              '#73d13d', '#ffc53d', '#ff4d4f', '#9254de'
+                            ][index % 8]} 100%)`,
+                            marginRight: '12px'
+                          }} />
+                          <div>
+                            <div style={{ fontSize: '16px', fontWeight: 600 }}>{item.name}</div>
+                            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                              {item.count} 个项目
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{
+                          background: '#f5f5f5',
+                          borderRadius: '8px',
+                          padding: '16px',
+                          marginTop: '12px'
+                        }}>
+                          <Row gutter={8}>
+                            <Col span={12}>
+                              <div style={{ color: '#666', fontSize: '12px', marginBottom: '4px' }}>总支出</div>
+                              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f5222d' }}>
+                                ¥{item.value.toFixed(2)}
+                              </div>
+                            </Col>
+                            <Col span={12}>
+                              <div style={{ color: '#666', fontSize: '12px', marginBottom: '4px' }}>剩余价值</div>
+                              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#52c41a' }}>
+                                ¥{item.remaining.toFixed(2)}
+                              </div>
+                            </Col>
+                          </Row>
+                          <Progress
+                            percent={((item.value - item.remaining) / item.value * 100)}
+                            strokeColor={{
+                              '0%': [
+                                '#667eea', '#f093fb', '#4facfe', '#fa709a',
+                                '#52c41a', '#faad14', '#f5222d', '#722ed1'
+                              ][index % 8],
+                              '100%': [
+                                '#764ba2', '#f5576c', '#00f2fe', '#fee140',
+                                '#73d13d', '#ffc53d', '#ff4d4f', '#9254de'
+                              ][index % 8]
+                            }}
+                            size="small"
+                            style={{ marginTop: '12px' }}
+                            format={percent => `消耗${percent.toFixed(1)}%`}
+                          />
+                        </div>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              </TabPane>
+
+              <TabPane
+                tab={
+                  <span>
+                    <WarningOutlined style={{ marginRight: '4px' }} />
+                    风险警告
+                  </span>
+                }
+                key="4"
+              >
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Card
+                      title={
+                        <span style={{ color: '#ff4d4f' }}>
+                          <WarningOutlined style={{ marginRight: '8px' }} />
+                          即将过期项目 ({statistics.riskProjects.length})
+                        </span>
+                      }
+                      style={{
+                        borderRadius: '12px',
+                        borderColor: '#ff4d4f',
+                        boxShadow: '0 4px 12px rgba(255, 77, 79, 0.2)'
+                      }}
+                    >
+                      {statistics.riskProjects.length > 0 ? (
+                        <div>
+                          {statistics.riskProjects.map(p => (
+                            <Card key={p.id} size="small" style={{ marginBottom: '8px' }}>
+                              <Row justify="space-between" align="middle">
+                                <Col>
+                                  <div style={{ fontWeight: 'bold' }}>{p.name}</div>
+                                  <div style={{ color: '#666', fontSize: '12px' }}>
+                                    {p.category_name}
+                                  </div>
+                                </Col>
+                                <Col>
+                                  <Tag color="error">
+                                    剩余{dayjs(p.end_time).diff(dayjs(), 'day')}天
+                                  </Tag>
+                                  <div style={{ color: '#ff4d4f', fontWeight: 'bold', textAlign: 'right' }}>
+                                    ¥{p.remaining_value.toFixed(2)}
+                                  </div>
+                                </Col>
+                              </Row>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                          暂无即将过期的项目
+                        </div>
+                      )}
+                    </Card>
+                  </Col>
+                  <Col span={12}>
+                    <Card
+                      title={
+                        <span style={{ color: '#faad14' }}>
+                          <ThunderboltOutlined style={{ marginRight: '8px' }} />
+                          异常消耗项目 ({statistics.highConsumption.length})
+                        </span>
+                      }
+                      style={{
+                        borderRadius: '12px',
+                        borderColor: '#faad14',
+                        boxShadow: '0 4px 12px rgba(250, 173, 20, 0.2)'
+                      }}
+                    >
+                      {statistics.highConsumption.length > 0 ? (
+                        <div>
+                          {statistics.highConsumption.map(p => (
+                            <Card key={p.id} size="small" style={{ marginBottom: '8px' }}>
+                              <Row justify="space-between" align="middle">
+                                <Col>
+                                  <div style={{ fontWeight: 'bold' }}>{p.name}</div>
+                                  <div style={{ color: '#666', fontSize: '12px' }}>
+                                    {p.category_name}
+                                  </div>
+                                </Col>
+                                <Col>
+                                  <Tag color="warning">
+                                    消耗{p.progress.toFixed(1)}%
+                                  </Tag>
+                                  <Progress
+                                    percent={p.progress}
+                                    size="small"
+                                    strokeColor="#faad14"
+                                    style={{ width: '100px' }}
+                                  />
+                                </Col>
+                              </Row>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                          暂无异常消耗的项目
+                        </div>
+                      )}
+                    </Card>
+                  </Col>
+                </Row>
+              </TabPane>
+            </Tabs>
+          </div>
+        )}
       </Modal>
 
       {/* 项目详情模态框 */}

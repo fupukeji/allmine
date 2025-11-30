@@ -46,12 +46,15 @@ const UserProfile = () => {
   const [preferencesForm] = Form.useForm()
   const [passwordForm] = Form.useForm()
   const [resetForm] = Form.useForm()
+  const [deactivateForm] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
+  const [deactivateLoading, setDeactivateLoading] = useState(false)
   const [userInfo, setUserInfo] = useState({})
   const [avatar, setAvatar] = useState('')
   const [resetModalVisible, setResetModalVisible] = useState(false)
+  const [deactivateModalVisible, setDeactivateModalVisible] = useState(false)
 
   useEffect(() => {
     fetchUserProfile()
@@ -217,6 +220,41 @@ const UserProfile = () => {
 
   const showResetConfirm = () => {
     setResetModalVisible(true)
+  }
+
+  const handleDeactivateAccount = async () => {
+    try {
+      setDeactivateLoading(true)
+      const values = await deactivateForm.validateFields()
+      
+      const response = await request.post('/auth/deactivate-account', {
+        username: values.username,
+        password: values.password
+      })
+      
+      if (response.code === 200) {
+        message.success('账户注销成功，即将退出...')
+        deactivateForm.resetFields()
+        setDeactivateModalVisible(false)
+        // 清除本地token
+        localStorage.removeItem('token')
+        // 1秒后跳转到登录页
+        setTimeout(() => {
+          window.location.href = '/login'
+        }, 1000)
+      } else {
+        message.error(response.message || '注销失败')
+      }
+    } catch (error) {
+      console.error('注销账户失败:', error)
+      message.error(error.response?.data?.message || '注销失败')
+    } finally {
+      setDeactivateLoading(false)
+    }
+  }
+
+  const showDeactivateConfirm = () => {
+    setDeactivateModalVisible(true)
   }
 
   const beforeUpload = (file) => {
@@ -612,13 +650,23 @@ const UserProfile = () => {
                   showIcon
                   style={{ marginBottom: 16 }}
                 />
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={showResetConfirm}
-                >
-                  清空数据库
-                </Button>
+                <Space>
+                  <Button
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={showResetConfirm}
+                  >
+                    清空数据库
+                  </Button>
+                  <Button
+                    danger
+                    type="primary"
+                    icon={<ExclamationCircleOutlined />}
+                    onClick={showDeactivateConfirm}
+                  >
+                    注销账户
+                  </Button>
+                </Space>
               </div>
             </Card>
           </Col>
@@ -696,6 +744,115 @@ const UserProfile = () => {
                   icon={<DeleteOutlined />}
                 >
                   确认清空
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Modal>
+
+        {/* 注销账户确认弹窗 */}
+        <Modal
+          title={
+            <Space>
+              <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
+              注销账户确认
+            </Space>
+          }
+          open={deactivateModalVisible}
+          onCancel={() => {
+            setDeactivateModalVisible(false)
+            deactivateForm.resetFields()
+          }}
+          footer={null}
+          width={550}
+        >
+          <Alert
+            message="警告：此操作不可恢复！"
+            description={
+              <div>
+                <p style={{ marginBottom: 12, fontWeight: 'bold' }}>
+                  注销账户将永久删除您的以下所有数据：
+                </p>
+                <ul style={{ marginTop: 8, paddingLeft: 20 }}>
+                  <li>用户账户信息</li>
+                  <li>所有虚拟资产（项目）</li>
+                  <li>所有固定资产</li>
+                  <li>所有分类</li>
+                  <li>所有资产收入记录</li>
+                  <li>所有维护记录</li>
+                  <li>所有AI报告</li>
+                  <li>智谱AI API Key配置</li>
+                </ul>
+                <p style={{ marginTop: 12, color: '#ff4d4f', fontWeight: 'bold' }}>
+                  注销后您将需要重新注册才能使用本系统！
+                </p>
+              </div>
+            }
+            type="error"
+            showIcon
+            style={{ marginBottom: 24 }}
+          />
+
+          <Form
+            form={deactivateForm}
+            layout="vertical"
+            onFinish={handleDeactivateAccount}
+          >
+            <Form.Item
+              label="请输入您的用户名进行确认"
+              name="username"
+              rules={[
+                { required: true, message: '请输入用户名' },
+                {
+                  validator: (_, value) => {
+                    if (value && value !== userInfo.username) {
+                      return Promise.reject('用户名不匹配')
+                    }
+                    return Promise.resolve()
+                  }
+                }
+              ]}
+            >
+              <Input
+                placeholder={`请输入: ${userInfo.username}`}
+                prefix={<UserOutlined />}
+                size="large"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="请输入您的登录密码"
+              name="password"
+              rules={[
+                { required: true, message: '请输入密码' }
+              ]}
+            >
+              <Input.Password
+                placeholder="请输入您的登录密码"
+                prefix={<LockOutlined />}
+                size="large"
+                iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+              />
+            </Form.Item>
+
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+                <Button 
+                  onClick={() => {
+                    setDeactivateModalVisible(false)
+                    deactivateForm.resetFields()
+                  }}
+                >
+                  取消
+                </Button>
+                <Button
+                  type="primary"
+                  danger
+                  htmlType="submit"
+                  loading={deactivateLoading}
+                  icon={<ExclamationCircleOutlined />}
+                >
+                  确认注销账户
                 </Button>
               </Space>
             </Form.Item>

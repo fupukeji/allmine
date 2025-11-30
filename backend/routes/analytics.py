@@ -46,6 +46,8 @@ def get_overview():
         # 分类统计
         category_stats = {}
         for project in projects:
+            if not project.category:
+                continue
             cat_name = project.category.name
             if cat_name not in category_stats:
                 category_stats[cat_name] = {

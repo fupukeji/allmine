@@ -14,7 +14,8 @@ import {
   Tag,
   Typography,
   Tooltip,
-  Tabs
+  Tabs,
+  Space
 } from 'antd'
 import { 
   LineChart, 
@@ -240,55 +241,141 @@ const Analytics = () => {
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Title level={2}><AreaChartOutlined /> BI 分析</Title>
+    <div style={{ padding: '24px', background: '#f5f7fa', minHeight: 'calc(100vh - 64px)' }}>
+      {/* 页面头部 */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '20px',
+        padding: '32px',
+        marginBottom: '24px',
+        boxShadow: '0 20px 60px rgba(102, 126, 234, 0.3)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* 浮动装饰 */}
+        <div style={{ 
+          position: 'absolute', 
+          top: '-80px', 
+          right: '-80px', 
+          width: '250px', 
+          height: '250px', 
+          background: 'rgba(255,255,255,0.1)', 
+          borderRadius: '50%',
+          animation: 'float 6s ease-in-out infinite'
+        }} />
+        <div style={{ 
+          position: 'absolute', 
+          bottom: '-60px', 
+          left: '-60px', 
+          width: '200px', 
+          height: '200px', 
+          background: 'rgba(255,255,255,0.08)', 
+          borderRadius: '50%',
+          animation: 'float 8s ease-in-out infinite'
+        }} />
         
-        <div style={{ display: 'flex', gap: 16 }}>
-          {activeTab === 'projects' && (
-            <>
-              <Select
-                value={selectedPeriod}
-                onChange={handlePeriodChange}
-                style={{ width: 120 }}
-              >
-                <Option value="day">按天</Option>
-                <Option value="week">按周</Option>
-                <Option value="month">按月</Option>
-                <Option value="year">按年</Option>
-              </Select>
+        <Row justify="space-between" align="middle" style={{ position: 'relative', zIndex: 1 }}>
+          <Col>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{
+                width: '60px',
+                height: '60px',
+                background: 'rgba(255,255,255,0.2)',
+                borderRadius: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '16px',
+                backdropFilter: 'blur(10px)'
+              }}>
+                <AreaChartOutlined style={{ fontSize: '32px', color: 'white' }} />
+              </div>
+              <div>
+                <Title level={2} style={{ color: 'white', margin: 0, fontWeight: 'bold' }}>
+                  BI 分析
+                </Title>
+                <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', marginTop: '4px' }}>
+                  数据驱动决策，智能分析您的资产状况
+                </div>
+              </div>
+            </div>
+          </Col>
+          <Col>
+            <Space>
+              {activeTab === 'projects' && (
+                <>
+                  <Select
+                    value={selectedPeriod}
+                    onChange={handlePeriodChange}
+                    style={{ 
+                      width: 120,
+                      borderRadius: '10px'
+                    }}
+                  >
+                    <Option value="day">按天</Option>
+                    <Option value="week">按周</Option>
+                    <Option value="month">按月</Option>
+                    <Option value="year">按年</Option>
+                  </Select>
+                  
+                  <RangePicker
+                    value={dateRange}
+                    onChange={handleDateRangeChange}
+                    allowClear
+                    style={{ borderRadius: '10px' }}
+                  />
+                </>
+              )}
               
-              <RangePicker
-                value={dateRange}
-                onChange={handleDateRangeChange}
-                allowClear
-              />
-            </>
-          )}
-          
-          <Button onClick={handleRefresh} loading={loading}>
-            刷新数据
-          </Button>
-        </div>
+              <Button 
+                onClick={handleRefresh} 
+                loading={loading}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'white',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '10px',
+                  fontWeight: 500
+                }}
+              >
+                刷新数据
+              </Button>
+            </Space>
+          </Col>
+        </Row>
       </div>
 
       {error ? (
-        <Alert
-          message="加载失败"
-          description={error}
-          type="error"
-          showIcon
-          action={
-            <Button size="small" danger onClick={handleRefresh}>
-              重新加载
-            </Button>
-          }
-        />
+        <div style={{
+          background: 'white',
+          borderRadius: '20px',
+          padding: '24px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+        }}>
+          <Alert
+            message="加载失败"
+            description={error}
+            type="error"
+            showIcon
+            action={
+              <Button size="small" danger onClick={handleRefresh}>
+                重新加载
+              </Button>
+            }
+          />
+        </div>
       ) : (
-        <Tabs 
-          activeKey={activeTab} 
-          onChange={setActiveTab}
-          items={[
+        <div style={{
+          background: 'white',
+          borderRadius: '20px',
+          padding: '24px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+        }}>
+          <Tabs 
+            activeKey={activeTab} 
+            onChange={setActiveTab}
+            items={[
             {
               key: 'projects',
               label: (
@@ -326,7 +413,15 @@ const Analytics = () => {
             }
           ]}
         />
+        </div>
       )}
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(20px); }
+        }
+      `}</style>
     </div>
   )
 }
@@ -344,60 +439,65 @@ const ProjectAnalytics = ({
   formatPieChartData 
 }) => (
   <Spin spinning={loading}>
-    {/* 核心指标卡片 */}
-    <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-      <Col xs={24} sm={12} md={6}>
-        <Card>
-          <Statistic
-            title="项目总数"
-            value={overviewData.total_projects || 0}
-            prefix={<ProjectOutlined />}
-            valueStyle={{ color: '#1890ff' }}
-          />
-        </Card>
-      </Col>
-      <Col xs={24} sm={12} md={6}>
-        <Card>
-          <Statistic
-            title="总投入"
-            value={overviewData.total_amount || 0}
-            precision={2}
-            prefix={<DollarOutlined />}
-            suffix="元"
-            valueStyle={{ color: '#52c41a' }}
-          />
-        </Card>
-      </Col>
-      <Col xs={24} sm={12} md={6}>
-        <Card>
-          <Statistic
-            title="已消耗"
-            value={overviewData.total_used_cost || 0}
-            precision={2}
-            prefix={<ClockCircleOutlined />}
-            suffix="元"
-            valueStyle={{ color: '#faad14' }}
-          />
-        </Card>
-      </Col>
-      <Col xs={24} sm={12} md={6}>
-        <Card>
-          <Statistic
-            title="剩余价值"
-            value={overviewData.total_remaining_value || 0}
-            precision={2}
-            prefix={<TrophyOutlined />}
-            suffix="元"
-            valueStyle={{ color: '#f5222d' }}
-          />
-        </Card>
-      </Col>
-    </Row>
+    <div style={{ background: '#f5f7fa', padding: '16px', borderRadius: '12px' }}>
+      {/* 核心指标卡片 */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} md={6}>
+          <Card className="hover-lift" style={{ borderRadius: '16px' }}>
+            <Statistic
+              title="项目总数"
+              value={overviewData.total_projects || 0}
+              prefix={<ProjectOutlined />}
+              valueStyle={{ color: '#667eea', fontWeight: 'bold' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card className="hover-lift" style={{ borderRadius: '16px' }}>
+            <Statistic
+              title="总投入"
+              value={overviewData.total_amount || 0}
+              precision={2}
+              prefix={<DollarOutlined />}
+              suffix="元"
+              valueStyle={{ color: '#52c41a', fontWeight: 'bold' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card className="hover-lift" style={{ borderRadius: '16px' }}>
+            <Statistic
+              title="已消耗"
+              value={overviewData.total_used_cost || 0}
+              precision={2}
+              prefix={<ClockCircleOutlined />}
+              suffix="元"
+              valueStyle={{ color: '#faad14', fontWeight: 'bold' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card className="hover-lift" style={{ borderRadius: '16px' }}>
+            <Statistic
+              title="剩余价值"
+              value={overviewData.total_remaining_value || 0}
+              precision={2}
+              prefix={<TrophyOutlined />}
+              suffix="元"
+              valueStyle={{ color: '#764ba2', fontWeight: 'bold' }}
+            />
+          </Card>
+        </Col>
+      </Row>
 
-    {/* 趋势图和状态分布 */}
-    <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-      <Col xs={24} lg={16}>
-        <Card title={<><BarChartOutlined /> 投入趋势分析</>}>
+      {/* 趋势图和状态分布 */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} lg={16}>
+          <Card 
+            title={<><BarChartOutlined /> 投入趋势分析</>}
+            className="hover-lift"
+            style={{ borderRadius: '16px' }}
+          >
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={trendsData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -407,11 +507,15 @@ const ProjectAnalytics = ({
               <Bar dataKey="total_amount" fill="#1890ff" />
             </BarChart>
           </ResponsiveContainer>
-        </Card>
-      </Col>
-      
-      <Col xs={24} lg={8}>
-        <Card title={<><PieChartOutlined /> 项目状态分布</>}>
+          </Card>
+        </Col>
+        
+        <Col xs={24} lg={8}>
+          <Card 
+            title={<><PieChartOutlined /> 项目状态分布</>}
+            className="hover-lift"
+            style={{ borderRadius: '16px' }}
+          >
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -435,11 +539,15 @@ const ProjectAnalytics = ({
       </Col>
     </Row>
 
-    {/* 分类投入分布饼图 */}
-    {categoryData.length > 0 && (
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col span={24}>
-          <Card title={<><PieChartOutlined /> 分类投入分布</>}>
+      {/* 分类投入分布饼图 */}
+      {categoryData.length > 0 && (
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Col span={24}>
+            <Card 
+              title={<><PieChartOutlined /> 分类投入分布</>}
+              className="hover-lift"
+              style={{ borderRadius: '16px' }}
+            >
             <ResponsiveContainer width="100%" height={400}>
               <PieChart>
                 <Pie
@@ -464,12 +572,17 @@ const ProjectAnalytics = ({
           </Card>
         </Col>
       </Row>
-    )}
+      )}
 
-    {/* 分类详细分析表格 */}
-    <Card title="分类详细分析" extra={
-      <Text type="secondary">点击表格行可查看该分类的项目明细</Text>
-    }>
+      {/* 分类详细分析表格 */}
+      <Card 
+        title="分类详细分析" 
+        extra={
+          <Text type="secondary">点击表格行可查看该分类的项目明细</Text>
+        }
+        className="hover-lift"
+        style={{ borderRadius: '16px' }}
+      >
       <Table
         columns={categoryColumns}
         dataSource={categoryData}
@@ -483,7 +596,18 @@ const ProjectAnalytics = ({
           style: { cursor: 'pointer' }
         })}
       />
-    </Card>
+      </Card>
+    </div>
+
+    <style>{`
+      .hover-lift {
+        transition: all 0.3s ease;
+      }
+      .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
+      }
+    `}</style>
   </Spin>
 )
 
@@ -561,6 +685,7 @@ const AssetsAnalytics = ({ loading, assetsStatistics }) => {
 
   return (
     <Spin spinning={loading}>
+      <div style={{ background: '#f5f7fa', padding: '16px', borderRadius: '12px' }}>
       {/* 检查 assetsStatistics 是否有效 */}
       {!assetsStatistics?.overview ? (
         <Alert
@@ -575,49 +700,49 @@ const AssetsAnalytics = ({ loading, assetsStatistics }) => {
           {/* 核心指标卡片 */}
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
             <Col xs={24} sm={12} md={6}>
-              <Card>
+              <Card className="hover-lift" style={{ borderRadius: '16px' }}>
                 <Statistic
                   title="资产总数"
                   value={assetsStatistics.overview.total_assets}
                   prefix={<BankOutlined />}
-                  valueStyle={{ color: '#1890ff' }}
+                  valueStyle={{ color: '#667eea', fontWeight: 'bold' }}
                   suffix="个"
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <Card>
+              <Card className="hover-lift" style={{ borderRadius: '16px' }}>
                 <Statistic
                   title="原值总计"
                   value={assetsStatistics.overview.total_original_value}
                   precision={2}
                   prefix={<DollarOutlined />}
                   suffix="元"
-                  valueStyle={{ color: '#52c41a' }}
+                  valueStyle={{ color: '#52c41a', fontWeight: 'bold' }}
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <Card>
+              <Card className="hover-lift" style={{ borderRadius: '16px' }}>
                 <Statistic
                   title="当前价值"
                   value={assetsStatistics.overview.total_current_value}
                   precision={2}
                   prefix={<TrophyOutlined />}
                   suffix="元"
-                  valueStyle={{ color: '#faad14' }}
+                  valueStyle={{ color: '#faad14', fontWeight: 'bold' }}
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <Card>
+              <Card className="hover-lift" style={{ borderRadius: '16px' }}>
                 <Statistic
                   title="累计折旧"
                   value={assetsStatistics.overview.total_accumulated_depreciation}
                   precision={2}
                   prefix={<ClockCircleOutlined />}
                   suffix="元"
-                  valueStyle={{ color: '#f5222d' }}
+                  valueStyle={{ color: '#764ba2', fontWeight: 'bold' }}
                 />
               </Card>
             </Col>
@@ -627,7 +752,11 @@ const AssetsAnalytics = ({ loading, assetsStatistics }) => {
           {assetsStatistics.status_distribution && assetsStatistics.status_distribution.length > 0 && (
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
               <Col span={24}>
-                <Card title={<><PieChartOutlined /> 资产状态分布</>}>
+                <Card 
+                  title={<><PieChartOutlined /> 资产状态分布</>}
+                  className="hover-lift"
+                  style={{ borderRadius: '16px' }}
+                >
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
@@ -656,6 +785,17 @@ const AssetsAnalytics = ({ loading, assetsStatistics }) => {
           )}
         </>
       )}
+      </div>
+
+      <style>{`
+        .hover-lift {
+          transition: all 0.3s ease;
+        }
+        .hover-lift:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
+        }
+      `}</style>
     </Spin>
   )
 }

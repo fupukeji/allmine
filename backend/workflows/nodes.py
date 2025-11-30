@@ -81,30 +81,66 @@ async def init_task_node(state: ReportWorkflowState) -> ReportWorkflowState:
 
 async def collect_data_node(state: ReportWorkflowState) -> ReportWorkflowState:
     """
-    N2: 数据采集节点
-    - 查询固定资产数据
-    - 查询虚拟资产数据
-    - 查询收入数据
-    - 构建结构化数据
+    N2: 数据采集节点（增强版）
+    - 查询固定资产数据（含折旧明细）
+    - 查询虚拟资产数据（含时间价值分析）
+    - 查询收入数据（含ROI计算）
+    - 查询分类层级结构
+    - 构建结构化数据 + 智能洞察
     """
     from services.zhipu_service import ZhipuAiService
+    from models.category import Category
+    from datetime import datetime
     
     task_context = state["task_context"]
     user_id = task_context["user_id"]
     start_date = task_context["start_date"]
     end_date = task_context["end_date"]
     
-    logger.info(f"📊 [N2-数据采集] 开始 - 用户ID: {user_id}, 时间范围: {start_date} 至 {end_date}")
+    logger.info(f"📊 [N2-数据采集增强] 开始 - 用户ID: {user_id}, 时间范围: {start_date} 至 {end_date}")
     
     try:
-        # 使用现有的服务方法准备数据
+        # 使用现有的服务方法准备基础数据
         service = ZhipuAiService(api_token="dummy", model="dummy")  # 仅用于数据查询
         raw_data = service.prepare_asset_data(user_id, start_date, end_date)
         
+        # 【增强1】获取分类层级结构
+        categories = Category.query.filter_by(user_id=user_id).all()
+        category_hierarchy = []
+        for cat in categories:
+            category_hierarchy.append({
+                'id': cat.id,
+                'name': cat.name,
+                'parent_id': cat.parent_id,
+                'level': cat.get_level(),
+                'full_path': cat.get_full_path(),
+                'project_count': len(cat.projects)
+            })
+        
+        # 【增强2】计算智能洞察指标
+        insights = {
+            # 固定资产健康度
+            'fixed_asset_health': _calculate_fixed_asset_health(raw_data['fixed_assets']),
+            # 虚拟资产效率评级
+            'virtual_asset_efficiency': _calculate_virtual_efficiency(raw_data['virtual_assets']),
+            # 收入质量评分
+            'income_quality': _calculate_income_quality(raw_data['fixed_assets']),
+            # 资产配置均衡度
+            'allocation_balance': _calculate_allocation_balance(raw_data),
+            # 分类层级数据
+            'category_hierarchy': category_hierarchy
+        }
+        
         state["raw_data"] = raw_data
         
-        logger.info(f"✅ [N2-数据采集] 完成 - 固定资产: {raw_data['fixed_assets']['total_assets']}项, "
-                   f"虚拟资产: {raw_data['virtual_assets']['total_projects']}项")
+        logger.info(f"✅ [N2-数据采集增强] 完成")
+        logger.info(f"   - 固定资产: {raw_data['fixed_assets']['total_assets']}项")
+        logger.info(f"   - 虚拟资产: {raw_data['virtual_assets']['total_projects']}项")
+        logger.info(f"   - 分类层级: {len(category_hierarchy)}个分类，最深{max([c['level'] for c in category_hierarchy], default=0)}层")
+        logger.info(f"   - 智能洞察: 健康度{insights['fixed_asset_health']:.1f}, 效率{insights['virtual_asset_efficiency']:.1f}")
+        
+        # 将insights单独存储，不修改raw_data结构
+        state["intelligent_insights"] = insights
         
         state["execution_path"].append({
             "node": "collect_data",
@@ -112,12 +148,19 @@ async def collect_data_node(state: ReportWorkflowState) -> ReportWorkflowState:
             "status": "completed",
             "data_summary": {
                 "fixed_assets_count": raw_data['fixed_assets']['total_assets'],
-                "virtual_assets_count": raw_data['virtual_assets']['total_projects']
+                "virtual_assets_count": raw_data['virtual_assets']['total_projects'],
+                "category_count": len(category_hierarchy),
+                "insights": insights
             }
         })
         
+        # 实时保存
+        _save_workflow_trace_realtime(state)
+        
     except Exception as e:
         logger.error(f"❌ [N2-数据采集] 失败: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         state["error_message"] = f"数据采集失败: {str(e)}"
         state["execution_path"].append({
             "node": "collect_data",
@@ -129,15 +172,100 @@ async def collect_data_node(state: ReportWorkflowState) -> ReportWorkflowState:
     return state
 
 
+def _calculate_fixed_asset_health(fixed_data):
+    """计算固定资产健康度（0-100）"""
+    if fixed_data['total_assets'] == 0:
+        return 50.0  # 无资产默认中等
+    
+    # 考虑因素：折旧率、收入率、使用率
+    health_score = 100.0
+    
+    # 折旧率惩罚（折旧率越高扣分越多）
+    depreciation_penalty = min(40, fixed_data['depreciation_rate'] * 0.5)
+    health_score -= depreciation_penalty
+    
+    # 收入率加分
+    if fixed_data['total_current_value'] > 0:
+        income_rate = (fixed_data['total_income'] / fixed_data['total_current_value']) * 100
+        income_bonus = min(30, income_rate * 3)
+        health_score += income_bonus
+    
+    # 使用率加分
+    status_stats = fixed_data.get('status_stats', {})
+    if fixed_data['total_assets'] > 0:
+        in_use = status_stats.get('使用中', 0)
+        usage_rate = (in_use / fixed_data['total_assets']) * 100
+        usage_bonus = min(20, usage_rate * 0.2)
+        health_score += usage_bonus
+    
+    return round(max(0, min(100, health_score)), 1)
+
+
+def _calculate_virtual_efficiency(virtual_data):
+    """计算虚拟资产效率（0-100）"""
+    if virtual_data['total_projects'] == 0:
+        return 50.0
+    
+    # 基于利用率和浪费率
+    efficiency = virtual_data['utilization_rate'] - virtual_data['waste_rate'] * 2
+    
+    # 即将过期项目扣分
+    if virtual_data.get('expiring_soon'):
+        expiring_count = len(virtual_data['expiring_soon'])
+        efficiency -= min(20, expiring_count * 5)
+    
+    return round(max(0, min(100, efficiency)), 1)
+
+
+def _calculate_income_quality(fixed_data):
+    """计算收入质量（0-100）"""
+    if fixed_data['total_current_value'] == 0:
+        return 0.0
+    
+    # ROI作为主要指标
+    roi = (fixed_data['total_income'] / fixed_data['total_current_value']) * 100
+    
+    # 转换为0-100分数
+    # 10% ROI = 100分, 5% ROI = 50分, 0% ROI = 0分
+    quality = roi * 10
+    
+    return round(max(0, min(100, quality)), 1)
+
+
+def _calculate_allocation_balance(raw_data):
+    """计算资产配置均衡度（0-100）"""
+    fixed_value = raw_data['fixed_assets']['total_current_value']
+    virtual_value = raw_data['virtual_assets']['total_amount']
+    total = fixed_value + virtual_value
+    
+    if total == 0:
+        return 50.0
+    
+    # 理想比例：固定资产60-80%，虚拟资产20-40%
+    fixed_ratio = (fixed_value / total) * 100
+    
+    if 60 <= fixed_ratio <= 80:
+        balance = 100  # 完美均衡
+    elif 50 <= fixed_ratio < 60 or 80 < fixed_ratio <= 90:
+        balance = 80   # 良好
+    elif 40 <= fixed_ratio < 50 or 90 < fixed_ratio <= 95:
+        balance = 60   # 一般
+    else:
+        balance = 40   # 失衡
+    
+    return round(balance, 1)
+
+
 async def compress_data_node(state: ReportWorkflowState) -> ReportWorkflowState:
     """
-    N3: 数据压缩节点
+    N3: 数据压缩节点（增强版）
     - 将结构化数据压缩为简洁文本
+    - 融合智能洞察指标
     - 为AI生成做准备
     """
     from services.zhipu_service import ZhipuAiService
     
-    logger.info(f"🗜️ [N3-数据压缩] 开始")
+    logger.info(f"🗜️ [N3-数据压缩增强] 开始")
     
     try:
         raw_data = state["raw_data"]
@@ -147,17 +275,42 @@ async def compress_data_node(state: ReportWorkflowState) -> ReportWorkflowState:
         service = ZhipuAiService(api_token="dummy", model="dummy")
         compressed_text = service._compress_data_to_text(raw_data)
         
+        # 【增强】添加智能洞察摘要
+        insights = state.get("intelligent_insights")
+        if insights:
+            insights_text = "\n\n【智能洞察指标】\n"
+            insights_text += f"- 🟢 固定资产健康度: {insights['fixed_asset_health']:.1f}/100\n"
+            insights_text += f"- ⚡ 虚拟资产效率: {insights['virtual_asset_efficiency']:.1f}/100\n"
+            insights_text += f"- 💵 收入质量: {insights['income_quality']:.1f}/100\n"
+            insights_text += f"- ⚖️ 资产配置均衡度: {insights['allocation_balance']:.1f}/100\n"
+            
+            # 分类层级信息
+            if 'category_hierarchy' in insights:
+                max_level = max([c['level'] for c in insights['category_hierarchy']], default=0)
+                top_categories = [c for c in insights['category_hierarchy'] if c['level'] == 0]
+                insights_text += f"\n- 📂 分类结构: {len(insights['category_hierarchy'])}个分类，{max_level+1}层深度，{len(top_categories)}个顶级分类"
+                # 显示前3个最活跃的分类
+                sorted_cats = sorted(insights['category_hierarchy'], key=lambda x: x['project_count'], reverse=True)[:3]
+                for cat in sorted_cats:
+                    insights_text += f"\n  • {cat['full_path']}: {cat['project_count']}个项目"
+            
+            compressed_text += insights_text
+        
         state["compressed_text"] = compressed_text
         
-        logger.info(f"✅ [N3-数据压缩] 完成 - 压缩后文本长度: {len(compressed_text)} 字符")
+        logger.info(f"✅ [N3-数据压缩增强] 完成 - 压缩后文本长度: {len(compressed_text)} 字符")
         logger.debug(f"压缩后文本预览:\n{compressed_text[:500]}...")
         
         state["execution_path"].append({
             "node": "compress_data",
             "timestamp": datetime.utcnow().isoformat(),
             "status": "completed",
-            "text_length": len(compressed_text)
+            "text_length": len(compressed_text),
+            "has_insights": insights is not None
         })
+        
+        # 实时保存
+        _save_workflow_trace_realtime(state)
         
     except Exception as e:
         logger.error(f"❌ [N3-数据压缩] 失败: {str(e)}")
@@ -418,7 +571,7 @@ async def evaluate_quality_node(state: ReportWorkflowState) -> ReportWorkflowSta
         ]
         
         present_fields = sum(1 for field in required_fields if field in content_json)
-        score["completeness"] = (present_fields / len(required_fields)) * 100
+        score["completeness"] = int((present_fields / len(required_fields)) * 100)
         
         # 检查数据引用（简单检查是否包含数值）
         content_str = str(content_json)
@@ -426,7 +579,7 @@ async def evaluate_quality_node(state: ReportWorkflowState) -> ReportWorkflowSta
         score["data_accuracy"] = 100 if has_numbers else 0
         
         # 计算总分
-        score["total_score"] = (
+        score["total_score"] = int(
             score["json_validity"] * 0.3 +
             score["completeness"] * 0.4 +
             score["data_accuracy"] * 0.3
@@ -489,6 +642,9 @@ async def save_report_node(state: ReportWorkflowState) -> ReportWorkflowState:
         
         # 提取摘要
         content = state["report_content"]
+        if not content:
+            raise Exception("报告内容为空")
+        
         try:
             content_json = json.loads(content)
             # 新格式：executive_summary 是对象
@@ -508,6 +664,20 @@ async def save_report_node(state: ReportWorkflowState) -> ReportWorkflowState:
         except Exception as e:
             logger.warning(f"⚠️ 摘要提取失败: {e}")
             summary = "报告已生成"
+        
+        # 【增强】添加智能洞察到报告内容
+        intelligent_insights = state.get("intelligent_insights")
+        if intelligent_insights:
+            # 如果是Markdown格式，注入智能洞察
+            try:
+                report_data = json.loads(content)
+                if isinstance(report_data, dict):
+                    report_data["intelligent_insights"] = intelligent_insights
+                    content = json.dumps(report_data, ensure_ascii=False)
+                    logger.info(f"✅ 已注入智能洞察到报告内容")
+            except:
+                # 如果解析失败，保持原样
+                pass
         
         # 更新报告
         report.content = content

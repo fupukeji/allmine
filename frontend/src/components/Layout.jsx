@@ -76,7 +76,7 @@ const AppLayout = ({ onLogout, userInfo }) => {
       label: '仪表盘',
     },
     {
-      key: '/projects',
+      key: '/virtual-assets',
       icon: <ProjectOutlined />,
       label: '随风而逝',
     },
@@ -200,11 +200,46 @@ const AppLayout = ({ onLogout, userInfo }) => {
           </Button>
           
           <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenuClick }} placement="bottomRight">
-            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-              <Avatar icon={<UserOutlined />} style={{ marginRight: '8px' }} />
-              <span>{currentUser.username || '用户'}</span>
+            <div style={{ 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)'
+            }}
+            >
+              <Avatar 
+                icon={<UserOutlined />} 
+                style={{ 
+                  marginRight: '10px',
+                  background: 'rgba(255, 255, 255, 0.3)',
+                  border: '2px solid rgba(255, 255, 255, 0.5)'
+                }} 
+              />
+              <span style={{ color: '#fff', fontWeight: '500' }}>
+                {currentUser.username || '用户'}
+              </span>
               {currentUser.role === 'admin' && (
-                <span style={{ marginLeft: '8px', fontSize: '12px', color: '#faad14' }}>
+                <span style={{ 
+                  marginLeft: '8px', 
+                  fontSize: '11px', 
+                  color: '#ffd700',
+                  background: 'rgba(255, 215, 0, 0.2)',
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                  fontWeight: 'bold'
+                }}>
                   [管理员]
                 </span>
               )}

@@ -31,7 +31,13 @@ import {
   AlertOutlined,
   DollarOutlined,
   PlusCircleOutlined,
-  FolderOutlined
+  FolderOutlined,
+  RiseOutlined,
+  FallOutlined,
+  TrophyOutlined,
+  BankOutlined,
+  PieChartOutlined,
+  LineChartOutlined
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
@@ -562,26 +568,81 @@ const FixedAssets = () => {
   }
 
   return (
-    <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
-        <Col>
-          <div>
-            <Title level={2} style={{ marginBottom: '4px' }}>
-              固定资产管理
-            </Title>
-            <div style={{ color: '#666', fontSize: '14px' }}>
-              💰 恒产生金：点击资产列表中的绿色"💰 收益"按钮管理收入信息
+    <div style={{ padding: '24px', background: '#f5f7fa', minHeight: 'calc(100vh - 64px)' }}>
+      {/* 页面头部 */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '20px',
+        padding: '32px',
+        marginBottom: '24px',
+        boxShadow: '0 20px 60px rgba(102, 126, 234, 0.3)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* 浮动装饰 */}
+        <div style={{ 
+          position: 'absolute', 
+          top: '-80px', 
+          right: '-80px', 
+          width: '250px', 
+          height: '250px', 
+          background: 'rgba(255,255,255,0.1)', 
+          borderRadius: '50%',
+          animation: 'float 6s ease-in-out infinite'
+        }} />
+        <div style={{ 
+          position: 'absolute', 
+          bottom: '-60px', 
+          left: '-60px', 
+          width: '200px', 
+          height: '200px', 
+          background: 'rgba(255,255,255,0.08)', 
+          borderRadius: '50%',
+          animation: 'float 8s ease-in-out infinite'
+        }} />
+          
+        <Row justify="space-between" align="middle" style={{ position: 'relative', zIndex: 1 }}>
+          <Col>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{
+                width: '60px',
+                height: '60px',
+                background: 'rgba(255,255,255,0.2)',
+                borderRadius: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '16px',
+                backdropFilter: 'blur(10px)'
+              }}>
+                <span style={{ fontSize: '32px' }}>💰</span>
+              </div>
+              <div>
+                <Title level={2} style={{ color: 'white', margin: 0, fontWeight: 'bold' }}>
+                  固定资产管理
+                </Title>
+                <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', marginTop: '4px' }}>
+                  恒产生金：点击资产列表中的绿色“💰 收益”按钮管理收入信息
+                </div>
+              </div>
             </div>
-          </div>
-        </Col>
-        <Col>
-          <Space>
-            <Button
-              icon={<BarChartOutlined />}
-              onClick={() => setStatisticsModalVisible(true)}
-            >
-              统计分析
-            </Button>
+          </Col>
+          <Col>
+            <Space>
+              <Button
+                icon={<BarChartOutlined />}
+                onClick={() => setStatisticsModalVisible(true)}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'white',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '10px',
+                  fontWeight: 500
+                }}
+              >
+                统计分析
+              </Button>
             <Select
               placeholder="筛选分类"
               style={{ width: 200 }}
@@ -625,58 +686,93 @@ const FixedAssets = () => {
                 </Button>
               </Popconfirm>
             )}
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={handleAdd}
-            >
-              添加资产
-            </Button>
-          </Space>
-        </Col>
-      </Row>
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={handleAdd}
+                style={{
+                  background: 'white',
+                  color: '#667eea',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontWeight: 600,
+                  boxShadow: '0 4px 12px rgba(255,255,255,0.3)'
+                }}
+              >
+                添加资产
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+      </div>
 
       {/* 统计概览卡片 */}
       {statistics && (
-        <Row gutter={16} style={{ marginBottom: '16px' }}>
+        <Row gutter={16} style={{ marginBottom: '24px' }}>
           <Col span={6}>
-            <Card size="small">
+            <Card 
+              className="hover-lift"
+              style={{
+                borderRadius: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+              }}
+            >
               <Statistic
                 title="资产总数"
                 value={statistics.overview.total_assets}
                 suffix="个"
+                valueStyle={{ color: '#667eea', fontWeight: 'bold' }}
               />
             </Card>
           </Col>
           <Col span={6}>
-            <Card size="small">
+            <Card 
+              className="hover-lift"
+              style={{
+                borderRadius: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+              }}
+            >
               <Statistic
                 title="原值总计"
                 value={statistics.overview.total_original_value}
                 precision={2}
                 suffix="元"
+                valueStyle={{ color: '#764ba2', fontWeight: 'bold' }}
               />
             </Card>
           </Col>
           <Col span={6}>
-            <Card size="small">
+            <Card 
+              className="hover-lift"
+              style={{
+                borderRadius: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+              }}
+            >
               <Statistic
                 title="当前价值"
                 value={statistics.overview.total_current_value}
                 precision={2}
                 suffix="元"
-                valueStyle={{ color: '#52c41a' }}
+                valueStyle={{ color: '#52c41a', fontWeight: 'bold' }}
               />
             </Card>
           </Col>
           <Col span={6}>
-            <Card size="small">
+            <Card 
+              className="hover-lift"
+              style={{
+                borderRadius: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+              }}
+            >
               <Statistic
                 title="累计折旧"
                 value={statistics.overview.total_accumulated_depreciation}
                 precision={2}
                 suffix="元"
-                valueStyle={{ color: '#faad14' }}
+                valueStyle={{ color: '#faad14', fontWeight: 'bold' }}
               />
             </Card>
           </Col>
@@ -687,7 +783,12 @@ const FixedAssets = () => {
       {statistics && statistics.expiring_assets.length > 0 && (
         <Card 
           size="small" 
-          style={{ marginBottom: '16px', borderColor: '#faad14' }}
+          style={{ 
+            marginBottom: '24px', 
+            borderColor: '#faad14',
+            borderRadius: '16px',
+            boxShadow: '0 4px 12px rgba(250, 173, 20, 0.1)'
+          }}
           title={
             <span>
               <AlertOutlined style={{ color: '#faad14', marginRight: '8px' }} />
@@ -705,42 +806,69 @@ const FixedAssets = () => {
         </Card>
       )}
 
-      <Table
-        dataSource={assets}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        rowSelection={rowSelection}
-        scroll={{ x: 1400 }}
-        locale={{
-          emptyText: (
-            <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <div style={{ fontSize: '18px', color: '#999', marginBottom: '16px' }}>
-                📊 还没有固定资产数据
+      {/* 数据表格 */}
+      <div style={{
+        background: 'white',
+        borderRadius: '20px',
+        padding: '24px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+      }}>
+        <Table
+          dataSource={assets}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
+          rowSelection={rowSelection}
+          scroll={{ x: 1400 }}
+          locale={{
+            emptyText: (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <div style={{ fontSize: '18px', color: '#999', marginBottom: '16px' }}>
+                  📊 还没有固定资产数据
+                </div>
+                <div style={{ color: '#666', marginBottom: '24px' }}>
+                  开始添加您的第一个固定资产，开启“恒产生金”的财富管理之旅！
+                </div>
+                <Button 
+                  type="primary" 
+                  icon={<PlusOutlined />} 
+                  onClick={handleAdd}
+                  size="large"
+                  style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: 'none',
+                    borderRadius: '10px'
+                  }}
+                >
+                  立即添加固定资产
+                </Button>
+                <div style={{ marginTop: '16px', fontSize: '12px', color: '#999' }}>
+                  💰 核心功能：添加资产后，点击绿色“💰 收益”按钮可记录租金、授权费、分红等收入，实现真正的“恒产生金”
+                </div>
               </div>
-              <div style={{ color: '#666', marginBottom: '24px' }}>
-                开始添加您的第一个固定资产，开启"恒产生金"的财富管理之旅！
-              </div>
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />} 
-                onClick={handleAdd}
-                size="large"
-              >
-                立即添加固定资产
-              </Button>
-              <div style={{ marginTop: '16px', fontSize: '12px', color: '#999' }}>
-                💰 核心功能：添加资产后，点击绿色"💰 收益"按钮可记录租金、授权费、分红等收入，实现真正的"恒产生金"
-              </div>
-            </div>
-          )
-        }}
-        pagination={{
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-        }}
-      />
+            )
+          }}
+          pagination={{
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
+        />
+      </div>
+      
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(20px); }
+        }
+        .hover-lift {
+          transition: all 0.3s ease;
+        }
+        .hover-lift:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
+        }
+      `}</style>
 
       {/* 添加/编辑资产模态框 */}
       <Modal
@@ -748,7 +876,6 @@ const FixedAssets = () => {
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={handleModalCancel}
-        destroyOnClose
         width={800}
       >
         <Form
@@ -1290,93 +1417,406 @@ const FixedAssets = () => {
         )}
       </Modal>
 
-      {/* 统计分析模态框 */}
+      {/* 统计分析模态框 - 优化版 */}
       <Modal
-        title="固定资产统计分析"
+        title={
+          <div style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            padding: '4px 0'
+          }}>
+            <BarChartOutlined style={{ marginRight: '8px', color: '#667eea' }} />
+            固定资产统计分析
+          </div>
+        }
         open={statisticsModalVisible}
         onCancel={() => setStatisticsModalVisible(false)}
         footer={[
-          <Button key="close" onClick={() => setStatisticsModalVisible(false)}>
+          <Button 
+            key="close" 
+            type="primary"
+            onClick={() => setStatisticsModalVisible(false)}
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none'
+            }}
+          >
             关闭
           </Button>
         ]}
-        width={1000}
+        width={1200}
+        styles={{ body: { padding: '24px', background: '#f5f7fa' } }}
       >
         {statistics && (
-          <Tabs defaultActiveKey="1">
-            <TabPane tab="总体概览" key="1">
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Card>
-                    <Statistic
-                      title="资产总数"
-                      value={statistics.overview.total_assets}
-                      suffix="个"
-                    />
-                  </Card>
-                </Col>
-                <Col span={8}>
-                  <Card>
-                    <Statistic
-                      title="原值总计"
-                      value={statistics.overview.total_original_value}
-                      precision={2}
-                      suffix="元"
-                    />
-                  </Card>
-                </Col>
-                <Col span={8}>
-                  <Card>
-                    <Statistic
-                      title="整体折旧率"
-                      value={statistics.overview.depreciation_rate}
-                      precision={1}
-                      suffix="%"
-                    />
-                  </Card>
-                </Col>
-              </Row>
-            </TabPane>
-            
-            <TabPane tab="状态分布" key="2">
-              <Row gutter={16}>
-                {statistics.status_distribution.map(item => (
-                  <Col span={6} key={item.status}>
-                    <Card>
+          <div style={{ minHeight: '500px' }}>
+            <Tabs 
+              defaultActiveKey="1"
+              size="large"
+              tabBarStyle={{
+                background: 'white',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                marginBottom: '16px'
+              }}
+            >
+              <TabPane 
+                tab={
+                  <span>
+                    <PieChartOutlined style={{ marginRight: '4px' }} />
+                    总体概览
+                  </span>
+                } 
+                key="1"
+              >
+                {/* 核心指标卡片 - 渐变设计 */}
+                <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+                  <Col span={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none',
+                        boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)'
+                      }}
+                    >
                       <Statistic
-                        title={getStatusText(item.status)}
-                        value={item.count}
+                        title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>资产总数</span>}
+                        value={statistics.overview.total_assets}
                         suffix="个"
-                        prefix={<Tag color={getStatusColor(item.status)}>{getStatusText(item.status)}</Tag>}
+                        valueStyle={{ color: '#fff', fontSize: '32px', fontWeight: 'bold' }}
+                        prefix={<BankOutlined style={{ color: 'rgba(255,255,255,0.8)' }} />}
                       />
-                      <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
-                        价值：¥{item.total_value.toFixed(2)}
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                        border: 'none',
+                        boxShadow: '0 8px 16px rgba(240, 147, 251, 0.3)'
+                      }}
+                    >
+                      <Statistic
+                        title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>原值总计</span>}
+                        value={statistics.overview.total_original_value}
+                        precision={2}
+                        suffix="元"
+                        valueStyle={{ color: '#fff', fontSize: '28px', fontWeight: 'bold' }}
+                        prefix={<DollarOutlined style={{ color: 'rgba(255,255,255,0.8)' }} />}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                        border: 'none',
+                        boxShadow: '0 8px 16px rgba(79, 172, 254, 0.3)'
+                      }}
+                    >
+                      <Statistic
+                        title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>当前价值</span>}
+                        value={statistics.overview.total_current_value}
+                        precision={2}
+                        suffix="元"
+                        valueStyle={{ color: '#fff', fontSize: '28px', fontWeight: 'bold' }}
+                        prefix={<RiseOutlined style={{ color: 'rgba(255,255,255,0.8)' }} />}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                        border: 'none',
+                        boxShadow: '0 8px 16px rgba(250, 112, 154, 0.3)'
+                      }}
+                    >
+                      <Statistic
+                        title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>累计折旧</span>}
+                        value={statistics.overview.total_accumulated_depreciation}
+                        precision={2}
+                        suffix="元"
+                        valueStyle={{ color: '#fff', fontSize: '28px', fontWeight: 'bold' }}
+                        prefix={<FallOutlined style={{ color: 'rgba(255,255,255,0.8)' }} />}
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+
+                {/* 整体折旧率进度条 */}
+                <Card
+                  style={{
+                    borderRadius: '12px',
+                    marginBottom: '24px',
+                    border: '1px solid #e8e8e8',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                  }}
+                  title={
+                    <span style={{ fontSize: '16px', fontWeight: 600 }}>
+                      <LineChartOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
+                      整体折旧进度
+                    </span>
+                  }
+                >
+                  <div style={{ padding: '20px 0' }}>
+                    <Progress
+                      percent={statistics.overview.depreciation_rate}
+                      strokeColor={{
+                        '0%': '#667eea',
+                        '100%': '#764ba2',
+                      }}
+                      strokeWidth={20}
+                      format={(percent) => (
+                        <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                          {percent.toFixed(1)}%
+                        </span>
+                      )}
+                    />
+                    <div style={{
+                      marginTop: '16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      color: '#666',
+                      fontSize: '14px'
+                    }}>
+                      <span>已折旧：¥{statistics.overview.total_accumulated_depreciation.toFixed(2)}</span>
+                      <span>剩余价值：¥{statistics.overview.total_current_value.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* 资产健康度评分 */}
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Card
+                      style={{
+                        borderRadius: '12px',
+                        border: '1px solid #e8e8e8',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        height: '100%'
+                      }}
+                      title={
+                        <span style={{ fontSize: '16px', fontWeight: 600 }}>
+                          <TrophyOutlined style={{ marginRight: '8px', color: '#faad14' }} />
+                          资产健康度
+                        </span>
+                      }
+                    >
+                      <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                        <Progress
+                          type="circle"
+                          percent={100 - statistics.overview.depreciation_rate}
+                          strokeColor={{
+                            '0%': '#52c41a',
+                            '100%': '#f5222d',
+                          }}
+                          strokeWidth={10}
+                          width={150}
+                          format={(percent) => (
+                            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                              {percent.toFixed(0)}
+                              <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>健康度</div>
+                            </div>
+                          )}
+                        />
+                        <div style={{ marginTop: '20px', color: '#666' }}>
+                          {100 - statistics.overview.depreciation_rate > 70 ? (
+                            <Tag color="success" style={{ fontSize: '14px', padding: '4px 12px' }}>资产状况优秀</Tag>
+                          ) : 100 - statistics.overview.depreciation_rate > 40 ? (
+                            <Tag color="warning" style={{ fontSize: '14px', padding: '4px 12px' }}>资产状况良好</Tag>
+                          ) : (
+                            <Tag color="error" style={{ fontSize: '14px', padding: '4px 12px' }}>需要关注</Tag>
+                          )}
+                        </div>
                       </div>
                     </Card>
                   </Col>
-                ))}
-              </Row>
-            </TabPane>
-            
-            <TabPane tab="分类分布" key="3">
-              <Row gutter={16}>
-                {statistics.category_distribution.map(item => (
-                  <Col span={8} key={item.category_name} style={{ marginBottom: '16px' }}>
-                    <Card>
-                      <Statistic
-                        title={item.category_name}
-                        value={item.count}
-                        suffix="个"
-                      />
-                      <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
-                        价值：¥{item.total_value.toFixed(2)}
+                  <Col span={12}>
+                    <Card
+                      style={{
+                        borderRadius: '12px',
+                        border: '1px solid #e8e8e8',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        height: '100%'
+                      }}
+                      title={
+                        <span style={{ fontSize: '16px', fontWeight: 600 }}>
+                          <DollarOutlined style={{ marginRight: '8px', color: '#52c41a' }} />
+                          价值保值率
+                        </span>
+                      }
+                    >
+                      <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                        <Progress
+                          type="circle"
+                          percent={(statistics.overview.total_current_value / statistics.overview.total_original_value * 100)}
+                          strokeColor={{
+                            '0%': '#1890ff',
+                            '100%': '#52c41a',
+                          }}
+                          strokeWidth={10}
+                          width={150}
+                          format={(percent) => (
+                            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                              {percent.toFixed(0)}%
+                              <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>保值率</div>
+                            </div>
+                          )}
+                        />
+                        <div style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
+                          <div>原值：¥{statistics.overview.total_original_value.toFixed(2)}</div>
+                          <div style={{ marginTop: '8px' }}>现值：¥{statistics.overview.total_current_value.toFixed(2)}</div>
+                        </div>
                       </div>
                     </Card>
                   </Col>
-                ))}
-              </Row>
-            </TabPane>
-          </Tabs>
+                </Row>
+              </TabPane>
+              
+              <TabPane 
+                tab={
+                  <span>
+                    <PieChartOutlined style={{ marginRight: '4px' }} />
+                    状态分布
+                  </span>
+                } 
+                key="2"
+              >
+                <Row gutter={[16, 16]}>
+                  {statistics.status_distribution.map(item => (
+                    <Col span={6} key={item.status}>
+                      <Card
+                        hoverable
+                        style={{
+                          borderRadius: '12px',
+                          border: '1px solid #e8e8e8',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                          transition: 'all 0.3s ease'
+                        }}
+                        styles={{ body: { padding: '24px' } }}
+                      >
+                        <div style={{ textAlign: 'center' }}>
+                          <Tag 
+                            color={getStatusColor(item.status)} 
+                            style={{ 
+                              fontSize: '14px', 
+                              padding: '6px 16px',
+                              marginBottom: '16px',
+                              borderRadius: '20px'
+                            }}
+                          >
+                            {getStatusText(item.status)}
+                          </Tag>
+                          <div style={{ fontSize: '36px', fontWeight: 'bold', margin: '12px 0' }}>
+                            {item.count}
+                          </div>
+                          <div style={{ color: '#999', fontSize: '14px', marginBottom: '16px' }}>资产数量</div>
+                          <div style={{
+                            background: '#f5f5f5',
+                            borderRadius: '8px',
+                            padding: '12px',
+                            marginTop: '12px'
+                          }}>
+                            <div style={{ color: '#666', fontSize: '12px' }}>总价值</div>
+                            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1890ff', marginTop: '4px' }}>
+                              ¥{item.total_value.toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              </TabPane>
+              
+              <TabPane 
+                tab={
+                  <span>
+                    <BankOutlined style={{ marginRight: '4px' }} />
+                    分类分布
+                  </span>
+                } 
+                key="3"
+              >
+                <Row gutter={[16, 16]}>
+                  {statistics.category_distribution.map((item, index) => (
+                    <Col span={8} key={item.category_name}>
+                      <Card
+                        hoverable
+                        style={{
+                          borderRadius: '12px',
+                          border: '1px solid #e8e8e8',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                          height: '100%'
+                        }}
+                        styles={{ body: { padding: '20px' } }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+                          <div style={{
+                            width: '8px',
+                            height: '40px',
+                            borderRadius: '4px',
+                            background: `linear-gradient(135deg, ${[
+                              '#667eea', '#f093fb', '#4facfe', '#fa709a',
+                              '#52c41a', '#faad14', '#f5222d', '#722ed1'
+                            ][index % 8]} 0%, ${[
+                              '#764ba2', '#f5576c', '#00f2fe', '#fee140',
+                              '#73d13d', '#ffc53d', '#ff4d4f', '#9254de'
+                            ][index % 8]} 100%)`,
+                            marginRight: '12px'
+                          }} />
+                          <div>
+                            <div style={{ fontSize: '16px', fontWeight: 600 }}>{item.category_name}</div>
+                            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                              {item.count} 个资产
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{
+                          background: '#f5f5f5',
+                          borderRadius: '8px',
+                          padding: '16px',
+                          marginTop: '12px'
+                        }}>
+                          <div style={{ color: '#666', fontSize: '12px', marginBottom: '8px' }}>总价值</div>
+                          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1890ff' }}>
+                            ¥{item.total_value.toFixed(2)}
+                          </div>
+                          <Progress
+                            percent={(item.total_value / statistics.overview.total_current_value * 100)}
+                            strokeColor={{
+                              '0%': [
+                                '#667eea', '#f093fb', '#4facfe', '#fa709a',
+                                '#52c41a', '#faad14', '#f5222d', '#722ed1'
+                              ][index % 8],
+                              '100%': [
+                                '#764ba2', '#f5576c', '#00f2fe', '#fee140',
+                                '#73d13d', '#ffc53d', '#ff4d4f', '#9254de'
+                              ][index % 8]
+                            }}
+                            size="small"
+                            style={{ marginTop: '12px' }}
+                            format={percent => `${percent.toFixed(1)}%`}
+                          />
+                        </div>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              </TabPane>
+            </Tabs>
+          </div>
         )}
       </Modal>
     </div>

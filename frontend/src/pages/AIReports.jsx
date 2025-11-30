@@ -721,7 +721,6 @@ const AIReports = () => {
         }}
         footer={null}
         width={1000}
-        destroyOnClose
       >
         {workflowReportId && (
           <WorkflowVisualization 
@@ -1101,17 +1100,33 @@ const AIReports = () => {
 
       {/* 报告详情弹窗 */}
       <Modal
-        title={currentReport?.title}
+        title={
+          <div style={{
+            padding: '8px 0',
+            borderBottom: '2px solid #f0f0f0'
+          }}>
+            <div style={{ fontSize: 20, fontWeight: 600, color: '#1a1a1a' }}>
+              📊 {currentReport?.title}
+            </div>
+            {currentReport && (
+              <div style={{ marginTop: 8, fontSize: 13, color: '#999' }}>
+                {currentReport.report_type_text} · {dayjs(currentReport.start_date).format('YYYY-MM-DD')} - {dayjs(currentReport.end_date).format('YYYY-MM-DD')}
+              </div>
+            )}
+          </div>
+        }
         open={reportDetailVisible}
         onCancel={() => setReportDetailVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setReportDetailVisible(false)}>
-            关闭
-          </Button>,
-        ]}
-        width={1200}
+        footer={null}
+        width={1400}
         style={{ top: 20 }}
-        styles={{ body: { maxHeight: '80vh', overflow: 'auto' } }}
+        styles={{ 
+          body: { 
+            maxHeight: '85vh', 
+            overflow: 'auto',
+            padding: '24px'
+          } 
+        }}
       >
         {currentReport && (
           <Tabs defaultActiveKey="content">

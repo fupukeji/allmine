@@ -7,6 +7,9 @@ import {
   PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, LineChart, Line
 } from 'recharts';
+import IntelligentInsightsCard from './IntelligentInsightsCard';
+import CategoryHierarchyTree from './CategoryHierarchyTree';
+import dayjs from 'dayjs';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -25,41 +28,147 @@ const ReportRenderer = ({ content }) => {
   if (content.report_type === 'markdown' && typeof content.content === 'string') {
     const markdownContent = content.content;
     const chartData = content.chart_data;
-    
-    // 调试信息
-    console.log('[ReportRenderer] Markdown模式');
-    console.log('[ReportRenderer] 图表数据:', chartData);
-    console.log('[ReportRenderer] 图表类型:', chartData ? Object.keys(chartData) : '无');
+    const intelligentInsights = content.intelligent_insights;
+    const categoryHierarchy = content.intelligent_insights?.category_hierarchy;
     
     return (
       <div style={{ 
-        padding: '24px',
-        backgroundColor: '#fff',
-        borderRadius: '8px',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        padding: '2px',
+        borderRadius: '12px',
         minHeight: '400px'
       }}>
+        <div style={{
+          background: '#fff',
+          borderRadius: '10px',
+          padding: '32px'
+        }}>
+        {/* 智能洞察卡片 - 置顶显示 */}
+        {intelligentInsights && (
+          <IntelligentInsightsCard insights={intelligentInsights} />
+        )}
+
+        {/* 分类层级树形图 */}
+        {categoryHierarchy?.length > 0 && (
+          <CategoryHierarchyTree categoryHierarchy={categoryHierarchy} />
+        )}
+
+        {/* 报告标题区域 */}
+        <div style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          padding: '24px 32px',
+          borderRadius: '8px',
+          marginBottom: '32px',
+          color: '#fff'
+        }}>
+          <Title level={1} style={{ color: '#fff', margin: 0, fontSize: 32, fontWeight: 700 }}>
+            📊 资产周报
+          </Title>
+          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 16 }}>
+            {content.generated_at || dayjs().format('YYYY年MM月DD日')}
+          </Text>
+        </div>
+
         {/* Markdown内容 */}
         <ReactMarkdown 
           remarkPlugins={[remarkGfm]}
           components={{
-            // 自定义样式
-            h1: ({node, ...props}) => <Title level={1} {...props} style={{ marginTop: 24, marginBottom: 16 }} />,
-            h2: ({node, ...props}) => <Title level={2} {...props} style={{ marginTop: 20, marginBottom: 12, borderBottom: '2px solid #f0f0f0', paddingBottom: 8 }} />,
-            h3: ({node, ...props}) => <Title level={3} {...props} style={{ marginTop: 16, marginBottom: 8 }} />,
-            h4: ({node, ...props}) => <Title level={4} {...props} style={{ marginTop: 12, marginBottom: 6 }} />,
-            p: ({node, ...props}) => <Paragraph {...props} style={{ fontSize: 15, lineHeight: 1.8, marginBottom: 16 }} />,
-            ul: ({node, ...props}) => <ul {...props} style={{ marginLeft: 24, marginBottom: 16 }} />,
-            ol: ({node, ...props}) => <ol {...props} style={{ marginLeft: 24, marginBottom: 16 }} />,
-            li: ({node, ...props}) => <li {...props} style={{ marginBottom: 8, fontSize: 14, lineHeight: 1.6 }} />,
+            h1: ({node, ...props}) => (
+              <Title level={1} {...props} style={{ 
+                marginTop: 32, 
+                marginBottom: 16,
+                fontSize: 28,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 700
+              }} />
+            ),
+            h2: ({node, ...props}) => (
+              <Title level={2} {...props} style={{ 
+                marginTop: 28, 
+                marginBottom: 14,
+                paddingLeft: 16,
+                borderLeft: '4px solid #667eea',
+                fontSize: 24,
+                fontWeight: 600
+              }} />
+            ),
+            h3: ({node, ...props}) => (
+              <Title level={3} {...props} style={{ 
+                marginTop: 20, 
+                marginBottom: 10,
+                fontSize: 20,
+                color: '#2c3e50',
+                fontWeight: 600
+              }} />
+            ),
+            h4: ({node, ...props}) => (
+              <Title level={4} {...props} style={{ 
+                marginTop: 16, 
+                marginBottom: 8,
+                fontSize: 18,
+                color: '#34495e'
+              }} />
+            ),
+            p: ({node, ...props}) => (
+              <Paragraph {...props} style={{ 
+                fontSize: 16, 
+                lineHeight: 1.9, 
+                marginBottom: 18,
+                color: '#2c3e50',
+                textAlign: 'justify'
+              }} />
+            ),
+            ul: ({node, ...props}) => (
+              <ul {...props} style={{ 
+                marginLeft: 0, 
+                marginBottom: 20,
+                paddingLeft: 24,
+                listStyle: 'none'
+              }} />
+            ),
+            ol: ({node, ...props}) => (
+              <ol {...props} style={{ 
+                marginLeft: 0, 
+                marginBottom: 20,
+                paddingLeft: 24
+              }} />
+            ),
+            li: ({node, ...props}) => {
+              const childContent = props.children;
+              return (
+                <li {...props} style={{ 
+                  marginBottom: 12, 
+                  fontSize: 15, 
+                  lineHeight: 1.8,
+                  color: '#2c3e50',
+                  paddingLeft: 8,
+                  position: 'relative'
+                }}>
+                  <span style={{
+                    position: 'absolute',
+                    left: -16,
+                    color: '#667eea',
+                    fontWeight: 'bold'
+                  }}>•</span>
+                  {childContent}
+                </li>
+              );
+            },
             blockquote: ({node, ...props}) => (
               <div {...props} style={{ 
-                borderLeft: '4px solid #1890ff',
-                paddingLeft: 16,
+                borderLeft: '4px solid #667eea',
+                paddingLeft: 20,
                 marginLeft: 0,
-                marginBottom: 16,
-                backgroundColor: '#f0f5ff',
-                padding: 12,
-                borderRadius: 4
+                marginBottom: 20,
+                background: 'linear-gradient(90deg, #f0f5ff 0%, #fff 100%)',
+                padding: '16px 20px',
+                borderRadius: 8,
+                fontSize: 15,
+                fontStyle: 'italic',
+                color: '#34495e',
+                boxShadow: '0 2px 8px rgba(102, 126, 234, 0.1)'
               }} />
             ),
             table: ({node, ...props}) => (
@@ -70,23 +179,33 @@ const ReportRenderer = ({ content }) => {
                 bordered
               />
             ),
-            hr: ({node, ...props}) => <Divider {...props} style={{ margin: '24px 0' }} />,
+            hr: ({node, ...props}) => (
+              <Divider {...props} style={{ 
+                margin: '32px 0',
+                borderTop: '2px solid #e8e8e8'
+              }} />
+            ),
             code: ({node, inline, ...props}) => (
               inline ? 
                 <code {...props} style={{ 
-                  backgroundColor: '#f5f5f5',
-                  padding: '2px 6px',
-                  borderRadius: 3,
-                  fontSize: 13,
-                  fontFamily: 'Monaco, Consolas, monospace'
+                  backgroundColor: '#f0f5ff',
+                  color: '#667eea',
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  fontSize: 14,
+                  fontFamily: 'Monaco, Consolas, monospace',
+                  fontWeight: 600
                 }} /> :
                 <pre {...props} style={{ 
-                  backgroundColor: '#f5f5f5',
-                  padding: 16,
-                  borderRadius: 4,
+                  backgroundColor: '#2c3e50',
+                  color: '#ecf0f1',
+                  padding: 20,
+                  borderRadius: 8,
                   overflow: 'auto',
-                  fontSize: 13,
-                  fontFamily: 'Monaco, Consolas, monospace'
+                  fontSize: 14,
+                  fontFamily: 'Monaco, Consolas, monospace',
+                  lineHeight: 1.6,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                 }} />
             ),
           }}
@@ -348,9 +467,9 @@ const ReportRenderer = ({ content }) => {
                   )}
                 </Col>
               </Row>
-            )}
-          </>
+            )} n          </>
         )}
+        </div>
       </div>
     );
   }
@@ -395,23 +514,33 @@ const ReportRenderer = ({ content }) => {
                 bordered
               />
             ),
-            hr: ({node, ...props}) => <Divider {...props} style={{ margin: '24px 0' }} />,
+            hr: ({node, ...props}) => (
+              <Divider {...props} style={{ 
+                margin: '32px 0',
+                borderTop: '2px solid #e8e8e8'
+              }} />
+            ),
             code: ({node, inline, ...props}) => (
               inline ? 
                 <code {...props} style={{ 
-                  backgroundColor: '#f5f5f5',
-                  padding: '2px 6px',
-                  borderRadius: 3,
-                  fontSize: 13,
-                  fontFamily: 'Monaco, Consolas, monospace'
+                  backgroundColor: '#f0f5ff',
+                  color: '#667eea',
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  fontSize: 14,
+                  fontFamily: 'Monaco, Consolas, monospace',
+                  fontWeight: 600
                 }} /> :
                 <pre {...props} style={{ 
-                  backgroundColor: '#f5f5f5',
-                  padding: 16,
-                  borderRadius: 4,
+                  backgroundColor: '#2c3e50',
+                  color: '#ecf0f1',
+                  padding: 20,
+                  borderRadius: 8,
                   overflow: 'auto',
-                  fontSize: 13,
-                  fontFamily: 'Monaco, Consolas, monospace'
+                  fontSize: 14,
+                  fontFamily: 'Monaco, Consolas, monospace',
+                  lineHeight: 1.6,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                 }} />
             ),
           }}

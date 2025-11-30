@@ -17,6 +17,9 @@ class ReportWorkflowState(TypedDict):
     previous_data: Optional[Dict[str, Any]]  # 上期数据（用于对比）
     comparison_text: Optional[str]  # 对比分析文本
     
+    # 智能洞察层（新增）
+    intelligent_insights: Optional[Dict[str, Any]]  # 智能洞察指标（健康度、效率、ROI等）
+    
     # AI分析层
     ai_insights: Optional[str]  # AI预分析洞察
     report_content: Optional[str]  # 生成的报告内容（JSON格式）
