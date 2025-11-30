@@ -7,6 +7,7 @@ from database import db
 from sqlalchemy import func, extract, and_, or_
 from datetime import datetime, timedelta
 import calendar
+from dateutil.relativedelta import relativedelta
 
 analytics_bp = Blueprint('analytics', __name__)
 
@@ -101,8 +102,16 @@ def get_trends():
             else:  # year
                 start_time = end_time - timedelta(days=365*3)
         else:
-            start_time = datetime.fromisoformat(start_date)
-            end_time = datetime.fromisoformat(end_date)
+            try:
+                start_time = datetime.fromisoformat(start_date)
+                end_time = datetime.fromisoformat(end_date)
+            except ValueError as ve:
+                # 尝试其他日期格式
+                try:
+                    start_time = datetime.strptime(start_date, '%Y-%m-%d')
+                    end_time = datetime.strptime(end_date, '%Y-%m-%d')
+                except Exception:
+                    return jsonify({'code': 400, 'message': '日期格式错误'}), 400
 
         # 获取期间内的项目
         projects = Project.query.filter(
@@ -118,8 +127,12 @@ def get_trends():
         # 按时间段统计
         trends_data = []
         current = start_time
+        max_iterations = 1000  # 防止无限循环
+        iteration_count = 0
         
-        while current <= end_time:
+        while current <= end_time and iteration_count < max_iterations:
+            iteration_count += 1
+            
             if period == 'day':
                 next_period = current + timedelta(days=1)
                 period_label = current.strftime('%Y-%m-%d')
@@ -127,10 +140,12 @@ def get_trends():
                 next_period = current + timedelta(weeks=1)
                 period_label = f"{current.strftime('%Y-%m-%d')} 周"
             elif period == 'month':
-                next_period = current.replace(month=current.month+1) if current.month < 12 else current.replace(year=current.year+1, month=1)
+                # 使用relativedelta安全地处理月份增加
+                next_period = current + relativedelta(months=1)
                 period_label = current.strftime('%Y-%m')
             else:  # year
-                next_period = current.replace(year=current.year+1)
+                # 使用relativedelta安全地处理年份增加
+                next_period = current + relativedelta(years=1)
                 period_label = current.strftime('%Y')
 
             # 统计该时间段的数据

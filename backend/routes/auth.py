@@ -2,88 +2,10 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from models.user import User
 from database import db
+from services.category_service import initialize_user_categories
 import re
 
 auth_bp = Blueprint('auth', __name__)
-
-def get_default_categories():
-    """获取默认资产分类配置"""
-    return [
-        # ========== 一、随风而逝（虚拟消耗型资产）==========
-        # 1.1 视频会员类
-        {'name': '视频会员', 'color': '#ff6b6b', 'icon': 'play-circle'},
-        {'name': '音乐会员', 'color': '#ff8787', 'icon': 'customer-service'},
-        {'name': '知识付费', 'color': '#ffa94d', 'icon': 'read'},
-        
-        # 1.2 生活服务类
-        {'name': '外卖会员', 'color': '#fab005', 'icon': 'coffee'},
-        {'name': '电商会员', 'color': '#fd7e14', 'icon': 'shopping'},
-        {'name': '出行服务', 'color': '#20c997', 'icon': 'car'},
-        {'name': '云存储', 'color': '#1c7ed6', 'icon': 'cloud'},
-        
-        # 1.3 娱乐游戏类
-        {'name': '游戏充值', 'color': '#74c0fc', 'icon': 'trophy'},
-        {'name': '游戏道具', 'color': '#a78bfa', 'icon': 'gift'},
-        {'name': '直播礼物', 'color': '#f06595', 'icon': 'heart'},
-        
-        # 1.4 数字内容类
-        {'name': '电子书', 'color': '#fd7e14', 'icon': 'book'},
-        {'name': '在线课程', 'color': '#4c6ef5', 'icon': 'experiment'},
-        {'name': '软件订阅', 'color': '#868e96', 'icon': 'appstore'},
-        
-        # ========== 二、恒产生金（固定资产）==========
-        # 2.1 不动产类
-        {'name': '房产', 'color': '#5c7cfa', 'icon': 'home'},
-        {'name': '车辆', 'color': '#4c6ef5', 'icon': 'car'},
-        {'name': '车位车库', 'color': '#364fc7', 'icon': 'inbox'},
-        
-        # 2.2 珍贵物品类
-        {'name': '珠宝首饰', 'color': '#7950f2', 'icon': 'gem'},
-        {'name': '艺术收藏', 'color': '#9775fa', 'icon': 'picture'},
-        {'name': '名包名表', 'color': '#be4bdb', 'icon': 'skin'},
-        
-        # 2.3 数码设备类
-        {'name': '电脑设备', 'color': '#748ffc', 'icon': 'laptop'},
-        {'name': '手机数码', 'color': '#339af0', 'icon': 'mobile'},
-        {'name': '摄影器材', 'color': '#1c7ed6', 'icon': 'camera'},
-        
-        # 2.4 家居物品类
-        {'name': '家用电器', 'color': '#69db7c', 'icon': 'thunderbolt'},
-        {'name': '家具', 'color': '#51cf66', 'icon': 'tool'},
-        {'name': '智能家居', 'color': '#37b24d', 'icon': 'bulb'},
-        
-        # ========== 三、金融流动资产 ==========
-        # 3.1 现金类
-        {'name': '银行存款', 'color': '#51cf66', 'icon': 'bank'},
-        {'name': '现金', 'color': '#40c057', 'icon': 'wallet'},
-        {'name': '支付宝微信', 'color': '#2f9e44', 'icon': 'alipay-circle'},
-        
-        # 3.2 投资理财类
-        {'name': '股票', 'color': '#f03e3e', 'icon': 'stock'},
-        {'name': '基金', 'color': '#22b8cf', 'icon': 'fund'},
-        {'name': '债券理财', 'color': '#20c997', 'icon': 'line-chart'},
-        {'name': '数字货币', 'color': '#ffd43b', 'icon': 'bitcoin'},
-        
-        # 3.3 保险保障类
-        {'name': '人寿保险', 'color': '#ff8787', 'icon': 'heart'},
-        {'name': '财产保险', 'color': '#ffa94d', 'icon': 'safety'},
-        {'name': '医疗保险', 'color': '#ff6b9d', 'icon': 'medicine-box'},
-        {'name': '社保公积金', 'color': '#f783ac', 'icon': 'schedule'},
-        
-        # ========== 四、负债管理 ==========
-        {'name': '房贷', 'color': '#fa5252', 'icon': 'home'},
-        {'name': '车贷', 'color': '#ff6b6b', 'icon': 'car'},
-        {'name': '信用卡', 'color': '#f06595', 'icon': 'credit-card'},
-        {'name': '消费贷', 'color': '#e64980', 'icon': 'account-book'},
-        {'name': '经营贷款', 'color': '#e03131', 'icon': 'fund-projection-screen'},
-        {'name': '私人借款', 'color': '#c92a2a', 'icon': 'file-text'},
-        
-        # ========== 五、其他资产 ==========
-        {'name': '应收账款', 'color': '#868e96', 'icon': 'file-done'},
-        {'name': '预付费用', 'color': '#adb5bd', 'icon': 'clock-circle'},
-        {'name': '积分权益', 'color': '#ffd8a8', 'icon': 'star'},
-        {'name': '其他资产', 'color': '#ced4da', 'icon': 'folder'}
-    ]
 
 @auth_bp.route('/health', methods=['GET'])
 def health_check():
@@ -164,22 +86,8 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        # 创建默认分类
-        from models.category import Category
-        
-        # 使用共享的默认分类配置
-        default_categories = get_default_categories()
-        
-        for cat_data in default_categories:
-            category = Category(
-                name=cat_data['name'],
-                color=cat_data['color'],
-                icon=cat_data['icon'],
-                user_id=user.id
-            )
-            db.session.add(category)
-        
-        db.session.commit()
+        # 为新用户初始化默认分类（使用层级结构）
+        initialize_user_categories(user.id)
         
         return jsonify({
             'code': 200,
@@ -449,19 +357,8 @@ def reset_database():
         
         db.session.commit()
         
-        # 为当前用户重新创建默认分类
-        default_categories = get_default_categories()
-        
-        for cat_data in default_categories:
-            category = Category(
-                name=cat_data['name'],
-                color=cat_data['color'],
-                icon=cat_data['icon'],
-                user_id=user.id
-            )
-            db.session.add(category)
-        
-        db.session.commit()
+        # 为当前用户重新创建默认分类（使用层级结构）
+        initialize_user_categories(user.id)
         
         return jsonify({
             'code': 200,

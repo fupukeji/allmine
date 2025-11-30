@@ -27,7 +27,8 @@ import {
   getCategories, 
   createCategory, 
   updateCategory, 
-  deleteCategory 
+  deleteCategory,
+  initializeCategories
 } from '../services/categories'
 
 const { Title, Text } = Typography
@@ -162,6 +163,50 @@ const Categories = () => {
     } catch (error) {
       console.error('删除分类失败:', error)
     }
+  }
+
+  const handleInitialize = async () => {
+    Modal.confirm({
+      title: '初始化默认分类',
+      content: (
+        <div>
+          <p>将为您添加预设的两级分类体系：</p>
+          <ul style={{ paddingLeft: 20 }}>
+            <li>8个一级分类（固定资产、金融资产等）</li>
+            <li>38个二级分类（房产、车辆、股票等）</li>
+          </ul>
+          <p style={{ color: '#52c41a', marginTop: 12 }}>
+            ✔️ 新的默认分类将与您现有的分类并存，不会删除现有分类。
+          </p>
+          <p style={{ color: '#faad14', marginTop: 8 }}>
+            ⚠️ 如果已存在同名分类，将自动跳过。
+          </p>
+        </div>
+      ),
+      okText: '确认初始化',
+      cancelText: '取消',
+      width: 500,
+      onOk: async () => {
+        try {
+          setLoading(true)
+          // 发送force=true强制初始化
+          const response = await initializeCategories({ force: true })
+          if (response.code === 200) {
+            message.success('默认分类初始化成功！')
+            fetchCategories()
+          } else {
+            message.info(response.message || '初始化完成')
+            fetchCategories() // 即使有警告也刷新列表
+          }
+        } catch (error) {
+          console.error('初始化分类失败:', error)
+          const errorMsg = error.response?.data?.message || '初始化失败'
+          message.error(errorMsg)
+        } finally {
+          setLoading(false)
+        }
+      }
+    })
   }
 
   const handleModalOk = async () => {
@@ -320,16 +365,31 @@ const Categories = () => {
     <div>
       <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
         <Col>
-          <Title level={2}>分类管理</Title>
+          <Space>
+            <Title level={2} style={{ margin: 0 }}>分类管理</Title>
+            {categories.length > 0 && treeData.length > 0 && (
+              <Tag color="blue">共 {categories.length} 个分类</Tag>
+            )}
+          </Space>
         </Col>
         <Col>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
-            onClick={handleAdd}
-          >
-            添加分类
-          </Button>
+          <Space>
+            <Tooltip title="如果您是老用户，可以初始化预设的层级分类体系">
+              <Button 
+                onClick={handleInitialize}
+                loading={loading}
+              >
+                初始化默认分类
+              </Button>
+            </Tooltip>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={() => handleAdd()}
+            >
+              添加分类
+            </Button>
+          </Space>
         </Col>
       </Row>
 

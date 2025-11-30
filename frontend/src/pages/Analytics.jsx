@@ -86,26 +86,35 @@ const Analytics = () => {
 
         if (overviewResponse.code === 200) {
           setOverviewData(overviewResponse.data)
+        } else {
+          throw new Error(overviewResponse.message || '获取概览数据失败')
         }
 
         if (trendsResponse.code === 200) {
           setTrendsData(trendsResponse.data.trends)
+        } else {
+          throw new Error(trendsResponse.message || '获取趋势数据失败')
         }
 
         if (categoryResponse.code === 200) {
           setCategoryData(categoryResponse.data)
+        } else {
+          throw new Error(categoryResponse.message || '获取分类数据失败')
         }
       } else if (activeTab === 'assets') {
         // 固定资产分析数据
         const assetsResponse = await getAssetsStatistics()
         if (assetsResponse.code === 200) {
           setAssetsStatistics(assetsResponse.data)
+        } else {
+          throw new Error(assetsResponse.message || '获取资产数据失败')
         }
       }
 
     } catch (err) {
       console.error('获取分析数据失败:', err)
-      setError('获取数据失败，请稍后重试')
+      const errorMessage = err.response?.data?.message || err.message || '获取数据失败，请稍后重试'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

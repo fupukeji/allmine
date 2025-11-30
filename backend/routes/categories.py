@@ -3,6 +3,12 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.category import Category
 from models.project import Project
 from database import db
+from services.category_service import (
+    initialize_user_categories,
+    reset_user_categories,
+    get_category_tree,
+    get_all_leaf_categories
+)
 
 categories_bp = Blueprint('categories', __name__)
 
@@ -309,4 +315,90 @@ def get_category(category_id):
         return jsonify({
             'code': 500,
             'message': f'获取分类详情失败：{str(e)}'
+        }), 500
+
+@categories_bp.route('/categories/initialize', methods=['POST'])
+@jwt_required()
+def initialize_categories():
+    """初始化用户的默认分类"""
+    try:
+        user_id = int(get_jwt_identity())
+        data = request.get_json() or {}
+        force = data.get('force', False)  # 是否强制初始化（即使已有分类）
+        
+        success = initialize_user_categories(user_id, skip_if_exists=not force)
+        
+        if success:
+            return jsonify({
+                'code': 200,
+                'message': '默认分类初始化成功'
+            })
+        else:
+            from models.category import Category
+            count = Category.query.filter_by(user_id=user_id).count()
+            return jsonify({
+                'code': 400,
+                'message': f'您已有{count}个分类。新的默认分类已与现有分类合并，重复的分类已跳过。'
+            }), 400
+        
+    except Exception as e:
+        return jsonify({
+            'code': 500,
+            'message': f'初始化分类失败：{str(e)}'
+        }), 500
+
+@categories_bp.route('/categories/reset', methods=['POST'])
+@jwt_required()
+def reset_categories():
+    """重置用户的分类为默认分类（危险操作）"""
+    try:
+        user_id = int(get_jwt_identity())
+        
+        # 检查是否有关联的项目
+        project_count = Project.query.join(Category).filter(
+            Category.user_id == user_id
+        ).count()
+        
+        if project_count > 0:
+            return jsonify({
+                'code': 400,
+                'message': f'您有 {project_count} 个项目关联到现有分类，无法重置。请先删除或转移项目'
+            }), 400
+        
+        success = reset_user_categories(user_id)
+        
+        if success:
+            return jsonify({
+                'code': 200,
+                'message': '分类已重置为默认分类'
+            })
+        else:
+            return jsonify({
+                'code': 500,
+                'message': '重置分类失败'
+            }), 500
+        
+    except Exception as e:
+        return jsonify({
+            'code': 500,
+            'message': f'重置分类失败：{str(e)}'
+        }), 500
+
+@categories_bp.route('/categories/leaf', methods=['GET'])
+@jwt_required()
+def get_leaf_categories():
+    """获取所有叶子分类（用于项目选择）"""
+    try:
+        user_id = int(get_jwt_identity())
+        leaf_categories = get_all_leaf_categories(user_id)
+        
+        return jsonify({
+            'code': 200,
+            'data': leaf_categories
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'code': 500,
+            'message': f'获取叶子分类失败：{str(e)}'
         }), 500
