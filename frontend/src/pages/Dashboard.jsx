@@ -520,15 +520,12 @@ const Dashboard = () => {
               </span>
             }
             loading={loading}
-            bordered={false}
-            style={{ 
-              borderRadius: 16,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              border: '1px solid #f0f0f0'
-            }}
-            headStyle={{
-              borderBottom: '2px solid #667eea',
-              fontWeight: 'bold'
+            bordered
+            styles={{
+              header: {
+                borderBottom: '2px solid #667eea',
+                fontWeight: 'bold'
+              }
             }}
           >
             <Row gutter={[16, 16]}>
@@ -599,15 +596,12 @@ const Dashboard = () => {
               </span>
             }
             loading={loading}
-            bordered={false}
-            style={{ 
-              borderRadius: 16,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              border: '1px solid #f0f0f0'
-            }}
-            headStyle={{
-              borderBottom: '2px solid #764ba2',
-              fontWeight: 'bold'
+            bordered
+            styles={{
+              header: {
+                borderBottom: '2px solid #764ba2',
+                fontWeight: 'bold'
+              }
             }}
           >
             <Row gutter={[16, 16]}>
@@ -690,9 +684,9 @@ const Dashboard = () => {
                     strokeColor={{
                       '0%': '#52c41a',
                       '50%': '#faad14',
-                      '100%': '#f5222d',
+                      '100%': '#f5222d'
                     }}
-                    strokeWidth={12}
+                    size={12}
                     format={percent => `${percent.toFixed(2)}%`}
                   />
                 </div>
