@@ -53,6 +53,7 @@ def create_app():
     from routes.maintenance import maintenance_bp
     from routes.nginx import nginx_bp
     from routes.reports import reports_bp
+    from routes.health import health_bp  # 健康检查
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(categories_bp, url_prefix='/api')
@@ -64,6 +65,7 @@ def create_app():
     app.register_blueprint(maintenance_bp, url_prefix='/api')
     app.register_blueprint(nginx_bp, url_prefix='/api')
     app.register_blueprint(reports_bp, url_prefix='/api')
+    app.register_blueprint(health_bp, url_prefix='/api')  # 健康检查
     
     # 创建数据表
     with app.app_context():

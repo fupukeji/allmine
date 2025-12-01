@@ -60,8 +60,7 @@ python-dateutil==2.8.2
 # - typing
 
 # ===========================
-# 生产环境建议
+# 生产环境依赖
 # ===========================
-# 部署时建议添加以下依赖:
-# gunicorn==21.2.0  # WSGI服务器
-# python-json-logger==2.0.7  # 日志格式化
+gunicorn==21.2.0
+python-json-logger==2.0.7

@@ -53,14 +53,78 @@ git clone https://github.com/fupukeji/timevalue.git
 cd timevalue
 ```
 
-### 方式一：一键启动（Windows开发环境）
+### 方式一：Docker部署（推荐👍）
+
+**一键部署，生产就绪**
+
+#### 本地开发环境
+
+```bash
+# Linux/Mac
+chmod +x deploy-docker.sh
+./deploy-docker.sh
+
+# Windows
+deploy-docker.bat
+
+# 或使用Makefile（推荐）
+make init   # 初始化
+make up     # 启动服务
+make ps     # 查看状态
+```
+
+#### 服务器部署（已有MySQL）
+
+**使用命令行**:
+
+```bash
+# SSH登录服务器
+ssh root@your-server-ip
+
+# 上传项目到 /opt/timevalue
+cd /opt/timevalue
+
+# 一键部署
+chmod +x 快速部署.sh
+./快速部署.sh
+```
+
+**使用宝塔面板** 👍 推荐：
+
+```bash
+# 1. 宝塔面板安装Docker管理器
+# 2. 上传项目到 /opt/timevalue
+# 3. 终端执行：
+cd /opt/timevalue
+docker-compose -f docker-compose.server.yml build
+docker-compose -f docker-compose.server.yml up -d
+
+# 4. 宝塔【安全】开放5000端口
+```
+
+📖 **Docker部署详细文档**:
+- **[宝塔快速部署.md](宝塔快速部署.md)** - 宝塔逄5分钟部署 👍
+- **[宝塔Docker部署指南.md](宝塔Docker部署指南.md)** - 宝塔完整教程689行
+- **[部署操作清单.md](部署操作清单.md)** - 5分钟快速部署 ⭐️
+- **[服务器Docker部署指南.md](服务器Docker部署指南.md)** - 完整文档655行
+- [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) - 通用Docker部署
+
+**Docker部署特性**:
+- ✅ 生产级配置（Gunicorn + MySQL 8.0）
+- ✅ 多阶段构建（镜像体积优化）
+- ✅ 非root用户运行（安全加固）
+- ✅ 健康检查（/health, /ready, /live）
+- ✅ 自动备份（make backup）
+- ✅ 一键管理（20+个Makefile命令）
+
+### 方式二：一键启动（Windows开发环境）
 
 ```bash
 # 一键启动（自动配置安全密钥、安装依赖、启动服务）
 python start_timevalue.py
 ```
 
-### 方式二：生产环境部署（阿里云服务器）
+### 方式三：生产环境部署（阿里云服务器）
 
 ```bash
 # 1. 一键部署
@@ -75,12 +139,13 @@ chmod +x *.sh
 ```
 
 📖 **详细部署文档**:
+- [Docker部署指南](DOCKER_DEPLOYMENT.md) ⭐️ 推荐
 - [生产环境部署指南](DEPLOY_GUIDE.md)
 - [Windows部署指南](WINDOWS_DEPLOY_GUIDE.md)
 - [Git使用指南](GIT_GUIDE.md)
 - [快速参考](QUICK_REFERENCE.md)
 
-### 方式二：手动启动
+### 方式四：手动启动
 
 #### 1. 生成安全密钥
 
@@ -108,18 +173,25 @@ npm run dev
 ## 📖 技术栈
 
 ### 后端技术
-- **框架**: Python Flask
-- **数据库**: SQLAlchemy + SQLite
+- **框架**: Python Flask 3.0
+- **数据库**: SQLAlchemy + MySQL 8.0
 - **认证**: Flask-JWT-Extended
+- **WSGI**: Gunicorn (生产环境)
 - **API文档**: RESTful API设计
 
 ### 前端技术
 - **框架**: React 18
 - **构建工具**: Vite
-- **UI组件**: Ant Design
+- **UI组件**: Ant Design 5.x
 - **状态管理**: React Hooks
 - **路由**: React Router
 - **图表**: Recharts
+
+### 部署技术
+- **容器**: Docker + Docker Compose
+- **反向代理**: Nginx (可选)
+- **进程管理**: Systemd / PM2
+- **监控**: Prometheus + Grafana (可选)
 
 ## 🔐 安全特性
 

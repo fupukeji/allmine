@@ -1,0 +1,53 @@
+version: '3.8'
+
+# 服务器专用Docker Compose配置
+# 用于在已有MySQL的服务器上部署TimeValue后端
+
+services:
+  # 后端API服务（连接宿主机MySQL）
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: timevalue-backend
+    restart: unless-stopped
+    environment:
+      # Flask配置
+      FLASK_ENV: ${FLASK_ENV:-production}
+      FLASK_DEBUG: ${FLASK_DEBUG:-False}
+      
+      # 数据库配置（连接宿主机MySQL）
+      DB_TYPE: mysql
+      DB_HOST: host.docker.internal
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-timevalue}
+      DB_USER: ${DB_USER:-timevalue}
+      DB_PASSWORD: ${DB_PASSWORD}
+      
+      # 安全密钥
+      SECRET_KEY: ${SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      
+      # JWT配置
+      JWT_ACCESS_TOKEN_EXPIRES: ${JWT_ACCESS_TOKEN_EXPIRES:-False}
+      
+      # CORS配置
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    volumes:
+      - ./backend/logs:/app/logs
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - timevalue-network
+
+networks:
+  timevalue-network:
+    driver: bridge
