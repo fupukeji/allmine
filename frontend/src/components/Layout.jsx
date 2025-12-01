@@ -178,67 +178,169 @@ const AppLayout = ({ onLogout, userInfo }) => {
         collapsed={collapsed}
         style={{
           background: '#fff',
-          boxShadow: '2px 0 8px rgba(0,0,0,0.15)'
+          boxShadow: '2px 0 8px rgba(0,0,0,0.15)',
+          overflow: 'hidden'
         }}
       >
+        {/* Logo品牌区域 - 增强版 */}
         <div style={{ 
-          height: '80px', 
+          height: '140px',
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          borderBottom: '1px solid #f0f0f0',
+          borderBottom: '2px solid #f0f0f0',
           flexDirection: 'column',
-          padding: '16px 0',
-          background: 'linear-gradient(180deg, #fafafa 0%, #fff 100%)'
+          padding: '20px 16px',
+          background: 'linear-gradient(180deg, #f8f9ff 0%, #fff 100%)',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
+          {/* 背景装饰圆圈 */}
+          <div style={{
+            position: 'absolute',
+            top: '-30px',
+            right: '-30px',
+            width: '100px',
+            height: '100px',
+            background: 'radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)',
+            borderRadius: '50%'
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '-40px',
+            left: '-40px',
+            width: '120px',
+            height: '120px',
+            background: 'radial-gradient(circle, rgba(118, 75, 162, 0.08) 0%, transparent 70%)',
+            borderRadius: '50%'
+          }} />
+          
           {!collapsed ? (
             <>
-              <img 
-                src="/logo.jpg" 
-                alt="TimeValue Logo" 
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '12px',
-                  marginBottom: '8px',
-                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                  objectFit: 'cover'
-                }}
-              />
+              {/* Logo容器 */}
+              <div style={{
+                position: 'relative',
+                marginBottom: '12px'
+              }}>
+                {/* Logo外层光晕 */}
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '72px',
+                  height: '72px',
+                  background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%)',
+                  borderRadius: '16px',
+                  filter: 'blur(8px)',
+                  animation: 'pulse 3s ease-in-out infinite'
+                }} />
+                
+                <img 
+                  src="/logo.jpg" 
+                  alt="TimeValue Logo" 
+                  style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '14px',
+                    boxShadow: '0 8px 24px rgba(102, 126, 234, 0.35), 0 0 0 3px rgba(102, 126, 234, 0.1)',
+                    objectFit: 'cover',
+                    position: 'relative',
+                    zIndex: 1,
+                    border: '2px solid white',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05) rotate(2deg)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1) rotate(0deg)'
+                  }}
+                />
+              </div>
+              
+              {/* 品牌名称 */}
               <h2 style={{ 
                 margin: '0', 
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                fontSize: '16px',
+                fontSize: '18px',
                 fontWeight: 'bold',
-                letterSpacing: '0.5px'
+                letterSpacing: '1px',
+                position: 'relative',
+                zIndex: 1
               }}>
                 时间价值
               </h2>
+              
+              {/* 英文副标题 */}
+              <div style={{ 
+                fontSize: '11px', 
+                color: '#999',
+                marginTop: '4px',
+                letterSpacing: '0.5px',
+                fontWeight: '500'
+              }}>
+                TimeValue
+              </div>
+              
+              {/* 公司标识 */}
               <div style={{ 
                 fontSize: '10px', 
-                color: '#999', 
-                lineHeight: '1',
-                marginTop: '4px'
+                color: '#bbb',
+                marginTop: '6px',
+                padding: '4px 12px',
+                background: 'rgba(102, 126, 234, 0.05)',
+                borderRadius: '12px',
+                border: '1px solid rgba(102, 126, 234, 0.1)'
               }}>
-                by 孚普科技
+                孚普科技
               </div>
             </>
           ) : (
-            <img 
-              src="/logo.jpg" 
-              alt="TimeValue Logo" 
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                objectFit: 'cover'
-              }}
-            />
+            /* 收起状态 - 简洁Logo */
+            <div style={{
+              position: 'relative'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '56px',
+                height: '56px',
+                background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
+                borderRadius: '12px',
+                filter: 'blur(6px)'
+              }} />
+              <img 
+                src="/logo.jpg" 
+                alt="TimeValue Logo" 
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
+                  objectFit: 'cover',
+                  position: 'relative',
+                  zIndex: 1,
+                  border: '2px solid white'
+                }}
+              />
+            </div>
           )}
         </div>
+        
+        {/* 添加脉动动画 */}
+        <style>
+          {`
+            @keyframes pulse {
+              0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+              50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
+            }
+          `}
+        </style>
         <Menu
           theme="light"
           mode="inline"
