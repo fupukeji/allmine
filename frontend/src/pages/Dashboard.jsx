@@ -297,7 +297,7 @@ const Dashboard = () => {
   const warnings = calculateWarnings()
 
   return (
-    <div style={{ padding: '0 0 24px 0', background: '#f5f7fa', minHeight: 'calc(100vh - 64px)', margin: '-24px', padding: '24px' }}>
+    <div style={{ background: '#f5f7fa', minHeight: 'calc(100vh - 64px)', margin: '-24px', padding: '24px' }}>
       <style>
         {`
           @keyframes pulse {

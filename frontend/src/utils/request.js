@@ -3,9 +3,11 @@ import { getToken, removeToken } from '../utils/auth'
 import { message } from 'antd'
 
 // 创建axios实例
-const api = axios.create({
-  baseURL: '/api',
+const api = axios.create({  baseURL: '/api',
   timeout: 60000, // 增加到60秒，用于AI报告生成等耗时操作
+  headers: {
+    'Content-Type': 'application/json'
+  }
 })
 
 // 请求拦截器

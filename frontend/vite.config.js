@@ -7,10 +7,14 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',  // 允许局域网访问
     port: 3000,
+    allowedHosts: [
+      'tv.saasnice.com',
+      '60.205.161.210'
+    ],
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true
       }
     }
   },
