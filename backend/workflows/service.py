@@ -56,6 +56,7 @@ class ReportWorkflowService:
             "previous_data": None,
             "comparison_text": None,
             "intelligent_insights": None,  # 新增
+            "qualitative_analysis": None,  # 新增：定性分析结论
             "ai_insights": None,
             "report_content": None,
             "quality_score": None,

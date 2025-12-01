@@ -21,7 +21,8 @@ class ReportWorkflowState(TypedDict):
     intelligent_insights: Optional[Dict[str, Any]]  # 智能洞察指标（健康度、效率、ROI等）
     
     # AI分析层
-    ai_insights: Optional[str]  # AI预分析洞察
+    qualitative_analysis: Optional[Dict[str, Any]]  # 定性分析结论（新增：N6输出的结构化判断）
+    ai_insights: Optional[str]  # AI预分析洞察（已弃用，保留兼容）
     report_content: Optional[str]  # 生成的报告内容（JSON格式）
     
     # 质量评估层

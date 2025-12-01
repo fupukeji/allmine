@@ -416,13 +416,15 @@ async def query_previous_data_node(state: ReportWorkflowState) -> ReportWorkflow
 
 async def ai_preanalysis_node(state: ReportWorkflowState) -> ReportWorkflowState:
     """
-    N6: AI预分析节点（可选）
-    - 对压缩数据进行AI预分析
-    - 生成洞察文本
+    N6: AI预分析节点（定性分析阶段）
+    - 基于智能洞察指标和压缩数据进行AI定性分析
+    - 输出结构化的定性结论，为后续报告生成提供指导
+    - 这是"从数据到结论"的关键第一步
     """
     from services.zhipu_service import ZhipuAiService
+    import json
     
-    logger.info(f"🧠 [N6-AI预分析] 开始")
+    logger.info(f"🧠 [N6-AI定性分析] 开始")
     
     try:
         task_context = state["task_context"]
@@ -430,8 +432,9 @@ async def ai_preanalysis_node(state: ReportWorkflowState) -> ReportWorkflowState
         model = task_context.get("model", "glm-4-flash")
         
         if not api_key:
-            logger.warning(f"⚠️ [N6-AI预分析] API Key未配置，跳过预分析")
-            state["ai_insights"] = ""
+            logger.warning(f"⚠️ [N6-AI定性分析] API Key未配置，跳过预分析")
+            state["qualitative_analysis"] = None
+            state["ai_insights"] = ""  # 兼容旧字段
             state["execution_path"].append({
                 "node": "ai_preanalysis",
                 "timestamp": datetime.utcnow().isoformat(),
@@ -440,27 +443,168 @@ async def ai_preanalysis_node(state: ReportWorkflowState) -> ReportWorkflowState
             })
             return state
         
-        service = ZhipuAiService(api_token=api_key, model=model)
+        # 获取智能洞察指标
+        intelligent_insights = state.get("intelligent_insights", {})
         compressed_text = state["compressed_text"]
         
-        # 默认禁用AI洞察以节省API调用（可通过配置启用）
-        enable_ai_insights = task_context.get("enable_ai_insights", False)
-        ai_insights = service._preprocess_data_with_ai(compressed_text, enable_ai_insights=enable_ai_insights)
+        if not intelligent_insights:
+            logger.warning(f"⚠️ [N6-AI定性分析] 未找到智能洞察指标，跳过预分析")
+            state["qualitative_analysis"] = None
+            state["ai_insights"] = ""
+            state["execution_path"].append({
+                "node": "ai_preanalysis",
+                "timestamp": datetime.utcnow().isoformat(),
+                "status": "skipped",
+                "reason": "未找到智能洞察指标"
+            })
+            return state
         
-        state["ai_insights"] = ai_insights
+        # 提取关键指标
+        fixed_asset_health = intelligent_insights.get('fixed_asset_health', 0)
+        virtual_asset_efficiency = intelligent_insights.get('virtual_asset_efficiency', 0)
+        income_quality = intelligent_insights.get('income_quality', 0)
+        allocation_balance = intelligent_insights.get('allocation_balance', 0)
         
-        logger.info(f"✅ [N6-AI预分析] 完成 - 洞察长度: {len(ai_insights)} 字符")
+        logger.info(f"   - 固定资产健康度: {fixed_asset_health:.1f}/100")
+        logger.info(f"   - 虚拟资产效率: {virtual_asset_efficiency:.1f}/100")
+        logger.info(f"   - 收入质量: {income_quality:.1f}/100")
+        logger.info(f"   - 资产配置均衡度: {allocation_balance:.1f}/100")
         
-        state["execution_path"].append({
-            "node": "ai_preanalysis",
-            "timestamp": datetime.utcnow().isoformat(),
-            "status": "completed",
-            "insights_length": len(ai_insights)
-        })
+        # 构建定性分析Prompt
+        qualitative_prompt = f"""
+【任务】作为专业的资产管理分析师，请基于以下智能洞察指标和数据摘要，生成一份**结构化的定性分析结论**。
+
+【智能洞察指标】
+- 🏠 固定资产健康度: {fixed_asset_health:.1f}/100
+- ⚡ 虚拟资产效率: {virtual_asset_efficiency:.1f}/100
+- 💵 收入质量: {income_quality:.1f}/100
+- ⚖️ 资产配置均衡度: {allocation_balance:.1f}/100
+
+【数据摘要】
+{compressed_text[:2000]}  # 只取前2000字符避免太长
+
+【输出要求】
+请以JSON格式输出以下结构的定性分析结论：
+
+```json
+{{
+  "overall_assessment": "整体评估：优秀/良好/中等/较差/危险",
+  "severity_level": "紧急程度：低/中/高",
+  "key_issues": [
+    "问题1：描述发现的主要问题",
+    "问题2：..."
+  ],
+  "strengths": [
+    "优势1：描述资产管理的亮点",
+    "优势2：..."
+  ],
+  "focus_areas": [
+    "重点关注区域1",
+    "重点关注区域2"
+  ],
+  "preliminary_recommendations": [
+    "初步建议1",
+    "初步建议2"
+  ],
+  "analysis_summary": "用200字总结上述判断的核心逻辑"
+}}
+```
+
+【分析原则】
+1. **指标门限**: 评分>=80为优秀，60-80为良好，40-60为中等，<40为需关注
+2. **问题识别**: 重点指出评分<60的指标及原因
+3. **优势发现**: 识别评分>=80的亮点领域
+4. **关注重点**: 明确后续报告应深入分析的领域
+5. **初步建议**: 提供高层次的改进方向
+
+请直接输出纯JSON，不要任何额外文字。
+"""
+        
+        # 调用AI生成定性分析
+        service = ZhipuAiService(api_token=api_key, model=model)
+        
+        logger.info(f"🤖 [N6-AI定性分析] 调用AI进行定性分析...")
+        response = service.client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "你是一位专业的资产管理分析师，擅长基于量化指标快速识别问题和机会。"},
+                {"role": "user", "content": qualitative_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1500
+        )
+        
+        qualitative_text = response.choices[0].message.content.strip()
+        logger.info(f"✅ [N6-AI定性分析] AI返回长度: {len(qualitative_text)} 字符")
+        
+        # 解析JSON结果
+        try:
+            # 提取JSON（去除代码块标记）
+            if "```json" in qualitative_text:
+                qualitative_text = qualitative_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in qualitative_text:
+                qualitative_text = qualitative_text.split("```")[1].split("```")[0].strip()
+            
+            qualitative_analysis = json.loads(qualitative_text)
+            
+            # 验证必要字段
+            required_fields = ["overall_assessment", "severity_level", "key_issues", "focus_areas"]
+            for field in required_fields:
+                if field not in qualitative_analysis:
+                    logger.warning(f"⚠️ [N6-AI定性分析] 缺少必要字段: {field}，使用默认值")
+                    qualitative_analysis[field] = "" if field in ["overall_assessment", "severity_level"] else []
+            
+            state["qualitative_analysis"] = qualitative_analysis
+            state["ai_insights"] = qualitative_text  # 保留原始文本供兼容
+            
+            logger.info(f"✅ [N6-AI定性分析] 完成")
+            logger.info(f"   - 整体评估: {qualitative_analysis['overall_assessment']}")
+            logger.info(f"   - 紧急程度: {qualitative_analysis['severity_level']}")
+            logger.info(f"   - 关键问题数: {len(qualitative_analysis.get('key_issues', []))}")
+            logger.info(f"   - 重点关注: {', '.join(qualitative_analysis.get('focus_areas', [])[:3])}")
+            
+            state["execution_path"].append({
+                "node": "ai_preanalysis",
+                "timestamp": datetime.utcnow().isoformat(),
+                "status": "completed",
+                "qualitative_summary": {
+                    "assessment": qualitative_analysis['overall_assessment'],
+                    "severity": qualitative_analysis['severity_level'],
+                    "issues_count": len(qualitative_analysis.get('key_issues', [])),
+                    "focus_areas": qualitative_analysis.get('focus_areas', [])
+                }
+            })
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ [N6-AI定性分析] JSON解析失败: {str(e)}")
+            logger.error(f"AI返回内容: {qualitative_text[:500]}...")
+            # 降级处理：使用基于指标的简单判断
+            qualitative_analysis = _generate_simple_qualitative_analysis(intelligent_insights)
+            state["qualitative_analysis"] = qualitative_analysis
+            state["ai_insights"] = json.dumps(qualitative_analysis, ensure_ascii=False)
+            
+            state["execution_path"].append({
+                "node": "ai_preanalysis",
+                "timestamp": datetime.utcnow().isoformat(),
+                "status": "completed",
+                "note": "AI解析失败，使用规则生成"
+            })
         
     except Exception as e:
-        logger.error(f"❌ [N6-AI预分析] 失败: {str(e)}，继续执行")
-        state["ai_insights"] = ""
+        logger.error(f"❌ [N6-AI定性分析] 异常: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        
+        # 降级处理
+        intelligent_insights = state.get("intelligent_insights", {})
+        if intelligent_insights:
+            qualitative_analysis = _generate_simple_qualitative_analysis(intelligent_insights)
+            state["qualitative_analysis"] = qualitative_analysis
+            state["ai_insights"] = json.dumps(qualitative_analysis, ensure_ascii=False)
+        else:
+            state["qualitative_analysis"] = None
+            state["ai_insights"] = ""
+        
         state["execution_path"].append({
             "node": "ai_preanalysis",
             "timestamp": datetime.utcnow().isoformat(),
@@ -469,6 +613,79 @@ async def ai_preanalysis_node(state: ReportWorkflowState) -> ReportWorkflowState
         })
     
     return state
+
+
+def _generate_simple_qualitative_analysis(intelligent_insights: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    基于智能洞察指标生成简单的定性分析（降级方案）
+    """
+    fixed_asset_health = intelligent_insights.get('fixed_asset_health', 0)
+    virtual_asset_efficiency = intelligent_insights.get('virtual_asset_efficiency', 0)
+    income_quality = intelligent_insights.get('income_quality', 0)
+    allocation_balance = intelligent_insights.get('allocation_balance', 0)
+    
+    avg_score = (fixed_asset_health + virtual_asset_efficiency + income_quality + allocation_balance) / 4
+    
+    # 整体评估
+    if avg_score >= 80:
+        overall_assessment = "优秀"
+        severity_level = "低"
+    elif avg_score >= 60:
+        overall_assessment = "良好"
+        severity_level = "低"
+    elif avg_score >= 40:
+        overall_assessment = "中等"
+        severity_level = "中"
+    else:
+        overall_assessment = "较差"
+        severity_level = "高"
+    
+    # 识别问题
+    key_issues = []
+    strengths = []
+    focus_areas = []
+    
+    if fixed_asset_health < 60:
+        key_issues.append(f"固定资产健康度偏低（{fixed_asset_health:.1f}分），可能存在过度折旧或收入不足问题")
+        focus_areas.append("固定资产健康度提升")
+    elif fixed_asset_health >= 80:
+        strengths.append(f"固定资产健康度优秀（{fixed_asset_health:.1f}分）")
+    
+    if virtual_asset_efficiency < 60:
+        key_issues.append(f"虚拟资产效率偏低（{virtual_asset_efficiency:.1f}分），存在浪费或即将过期情况")
+        focus_areas.append("虚拟资产利用率优化")
+    elif virtual_asset_efficiency >= 80:
+        strengths.append(f"虚拟资产效率优秀（{virtual_asset_efficiency:.1f}分）")
+    
+    if income_quality < 60:
+        key_issues.append(f"收入质量需提升（{income_quality:.1f}分），ROI表现不佳")
+        focus_areas.append("增加资产收入")
+    elif income_quality >= 80:
+        strengths.append(f"收入质量优秀（{income_quality:.1f}分）")
+    
+    if allocation_balance < 60:
+        key_issues.append(f"资产配置失衡（{allocation_balance:.1f}分），需调整结构")
+        focus_areas.append("资产配置优化")
+    elif allocation_balance >= 80:
+        strengths.append(f"资产配置均衡（{allocation_balance:.1f}分）")
+    
+    # 如果没有问题，添加默认关注
+    if not focus_areas:
+        focus_areas = ["保持当前优秀状态", "密切监控资产变化"]
+    
+    return {
+        "overall_assessment": overall_assessment,
+        "severity_level": severity_level,
+        "key_issues": key_issues if key_issues else ["无明显问题"],
+        "strengths": strengths if strengths else ["无特别突出之处"],
+        "focus_areas": focus_areas,
+        "preliminary_recommendations": [
+            "根据关键问题制定针对性改进方案",
+            "定期监控各项指标变化趋势"
+        ],
+        "analysis_summary": f"根据智能指标分析，当前资产状况为{overall_assessment}（平均分{avg_score:.1f}）。" + 
+                           ("需重点关注" + ",".join(focus_areas[:2]) if key_issues else "整体表现良好")
+    }
 
 
 async def generate_report_node(state: ReportWorkflowState) -> ReportWorkflowState:
