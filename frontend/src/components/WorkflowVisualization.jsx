@@ -77,20 +77,54 @@ const WorkflowVisualization = ({ reportId, refreshInterval = 3000 }) => {
   useEffect(() => {
     if (!reportId) return;
 
+    console.log('🔄 [WorkflowVisualization] 初始化, reportId:', reportId);
+    
     // 初始加载
     fetchWorkflowTrace();
 
-    // 定时刷新（报告生成中时）
-    const timer = setInterval(() => {
-      // 如果状态为generating或者没有workflowData，继续刷新
-      if (!workflowData || workflowData.status === 'generating') {
-        console.log('[WorkflowVisualization] 定时刷新工作流数据...');
-        fetchWorkflowTrace();
+    // 定时器引用
+    let timer = null;
+    
+    // 只有在生成中才开启定时刷新
+    const startPolling = () => {
+      if (timer) {
+        clearInterval(timer);
       }
-    }, refreshInterval);
+      
+      timer = setInterval(() => {
+        console.log('⏰ [WorkflowVisualization] 定时检查工作流状态...');
+        fetchWorkflowTrace();
+      }, refreshInterval);
+      
+      console.log('▶️ [WorkflowVisualization] 启动轮询定时器');
+    };
+    
+    // 检查是否需要轮询
+    const checkAndStartPolling = () => {
+      if (workflowData) {
+        if (workflowData.status === 'generating') {
+          console.log('🔄 [WorkflowVisualization] 报告生成中，启动轮询');
+          startPolling();
+        } else {
+          console.log('⛔ [WorkflowVisualization] 报告已完成/失败，不需轮询');
+          if (timer) {
+            clearInterval(timer);
+            timer = null;
+          }
+        }
+      }
+    };
+    
+    // 监听workflowData变化
+    checkAndStartPolling();
 
-    return () => clearInterval(timer);
-  }, [reportId, refreshInterval, workflowData]);
+    return () => {
+      console.log('🧹 [WorkflowVisualization] 组件卸载，清除定时器');
+      if (timer) {
+        clearInterval(timer);
+      }
+    };
+  }, [reportId, workflowData?.status]);
 
   // 获取节点状态图标
   const getNodeStatusIcon = (node) => {
@@ -160,6 +194,17 @@ const WorkflowVisualization = ({ reportId, refreshInterval = 3000 }) => {
           type="info"
           showIcon
           icon={<SyncOutlined spin />}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+      
+      {/* 完成提示 */}
+      {workflowData?.status === 'completed' && (
+        <Alert
+          message="报告生成完成"
+          description="工作流已成功执行完毕"
+          type="success"
+          showIcon
           style={{ marginBottom: 16 }}
         />
       )}
