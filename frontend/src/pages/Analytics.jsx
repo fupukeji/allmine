@@ -44,6 +44,7 @@ import {
 } from '@ant-design/icons'
 import { getAnalyticsOverview, getAnalyticsTrends, getCategoryAnalysis } from '../services/analytics'
 import { getAssetsStatistics } from '../services/assets'
+import PageHeader from '../components/PageHeader'
 import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
@@ -242,8 +243,40 @@ const Analytics = () => {
 
   return (
     <div style={{ padding: '24px', background: '#f5f7fa', minHeight: 'calc(100vh - 64px)' }}>
+      <PageHeader 
+        title="BI 分析"
+        subtitle="数据驱动决策，智能分析您的资产状况"
+        icon={<AreaChartOutlined />}
+        extra={
+          <Space>
+            {activeTab === 'projects' && (
+              <>
+                <Select
+                  value={selectedPeriod}
+                  onChange={handlePeriodChange}
+                  style={{ width: 120, borderRadius: '10px' }}
+                >
+                  <Option value="day">按天</Option>
+                  <Option value="week">按周</Option>
+                  <Option value="month">按月</Option>
+                  <Option value="year">按年</Option>
+                </Select>
+                <RangePicker
+                  value={dateRange}
+                  onChange={handleDateRangeChange}
+                  allowClear
+                  style={{ borderRadius: '10px' }}
+                />
+              </>
+            )}
+            <Button onClick={handleRefresh} loading={loading}>
+              刷新数据
+            </Button>
+          </Space>
+        }
+      />
       {/* 页面头部 */}
-      <div style={{
+      <div style={{ display: 'none' }}>
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         borderRadius: '20px',
         padding: '32px',

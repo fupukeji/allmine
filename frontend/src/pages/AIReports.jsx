@@ -39,6 +39,7 @@ import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek'; // 引入ISO周插件
 import ReportRenderer from '../components/ReportRenderer'; // 引入增强渲染器
 import WorkflowVisualization from '../components/WorkflowVisualization'; // 工作流可视化组件
+import PageHeader from '../components/PageHeader';
 
 // 扩展dayjs支持ISO周
 dayjs.extend(isoWeek);
