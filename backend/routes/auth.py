@@ -30,10 +30,16 @@ def validate_password(password):
 def register():
     """用户注册"""
     try:
-        data = request.get_json()
+        data = request.get_json(force=True)
         
         # 验证必填字段
         required_fields = ['username', 'email', 'password']
+        if not data:
+            return jsonify({
+                'code': 400,
+                'message': '请求数据不能为空'
+            }), 400
+            
         for field in required_fields:
             if not data.get(field):
                 return jsonify({
@@ -106,10 +112,10 @@ def register():
 def login():
     """用户登录"""
     try:
-        data = request.get_json()
+        data = request.get_json(force=True)
         
         # 验证必填字段
-        if not data.get('username') or not data.get('password'):
+        if not data or not data.get('username') or not data.get('password'):
             return jsonify({
                 'code': 400,
                 'message': '用户名和密码不能为空'
