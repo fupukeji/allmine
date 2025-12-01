@@ -42,6 +42,27 @@ const Register = () => {
       position: 'relative',
       overflow: 'hidden'
     }}>
+      {/* 顶部装饰横幅 */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '6px',
+        background: 'linear-gradient(90deg, #ffd700 0%, #ffed4e 25%, #00f2fe 50%, #764ba2 75%, #ffd700 100%)',
+        backgroundSize: '200% 100%',
+        animation: 'gradientFlow 3s ease infinite'
+      }} />
+      
+      <style>
+        {`
+          @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+        `}
+      </style>
       {/* 背景装饰圆圈 */}
       <div style={{
         position: 'absolute',
@@ -111,18 +132,22 @@ const Register = () => {
               }} />
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{
-                  width: '80px',
-                  height: '80px',
-                  background: 'rgba(255,255,255,0.2)',
-                  borderRadius: '20px',
-                  margin: '0 auto 16px',
+                  width: '90px',
+                  height: '90px',
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)',
+                  borderRadius: '24px',
+                  margin: '0 auto 20px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '40px',
-                  backdropFilter: 'blur(10px)'
+                  fontSize: '48px',
+                  fontWeight: 'bold',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  color: '#fff'
                 }}>
-                  👤
+                  T
                 </div>
                 <Title level={2} style={{ color: 'white', marginBottom: '8px', fontWeight: 'bold' }}>
                   用户注册

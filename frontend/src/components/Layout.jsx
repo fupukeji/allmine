@@ -146,6 +146,32 @@ const AppLayout = ({ onLogout, userInfo }) => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
+      {/* 现代化顶部横幅 */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        height: '4px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: '-100%',
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+          animation: 'shimmer 2s infinite'
+        }} />
+      </div>
+      <style>
+        {`
+          @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+          }
+        `}
+      </style>
+      
       <Sider 
         trigger={null} 
         collapsible 
@@ -156,20 +182,69 @@ const AppLayout = ({ onLogout, userInfo }) => {
         }}
       >
         <div style={{ 
-          height: '64px', 
+          height: '80px', 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
           borderBottom: '1px solid #f0f0f0',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          padding: '16px 0',
+          background: 'linear-gradient(180deg, #fafafa 0%, #fff 100%)'
         }}>
-          {!collapsed && (
+          {!collapsed ? (
             <>
-              <h2 style={{ margin: '4px 0 0 0', color: '#1890ff', fontSize: '16px' }}>时间价值</h2>
-              <div style={{ fontSize: '10px', color: '#999', lineHeight: '1' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '8px',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#fff'
+              }}>
+                T
+              </div>
+              <h2 style={{ 
+                margin: '0', 
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                letterSpacing: '0.5px'
+              }}>
+                时间价值
+              </h2>
+              <div style={{ 
+                fontSize: '10px', 
+                color: '#999', 
+                lineHeight: '1',
+                marginTop: '4px'
+              }}>
                 by 孚普科技
               </div>
             </>
+          ) : (
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              fontSize: '20px',
+              fontWeight: 'bold',
+              color: '#fff'
+            }}>
+              T
+            </div>
           )}
         </div>
         <Menu
