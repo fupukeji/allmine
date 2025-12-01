@@ -131,24 +131,21 @@ const Register = () => {
                 background: 'rgba(255,255,255,0.1)'
               }} />
               <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{
-                  width: '90px',
-                  height: '90px',
-                  background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)',
-                  borderRadius: '24px',
-                  margin: '0 auto 20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '48px',
-                  fontWeight: 'bold',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-                  border: '2px solid rgba(255,255,255,0.2)',
-                  color: '#fff'
-                }}>
-                  T
-                </div>
+                <img 
+                  src="/logo.jpg" 
+                  alt="TimeValue Logo" 
+                  style={{
+                    width: '100px',
+                    height: '100px',
+                    borderRadius: '24px',
+                    margin: '0 auto 20px',
+                    display: 'block',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                    border: '3px solid rgba(255,255,255,0.3)',
+                    objectFit: 'cover'
+                  }}
+                />
                 <Title level={2} style={{ color: 'white', marginBottom: '8px', fontWeight: 'bold' }}>
                   用户注册
                 </Title>

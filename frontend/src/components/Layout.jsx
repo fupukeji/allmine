@@ -193,22 +193,18 @@ const AppLayout = ({ onLogout, userInfo }) => {
         }}>
           {!collapsed ? (
             <>
-              <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '8px',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                fontSize: '24px',
-                fontWeight: 'bold',
-                color: '#fff'
-              }}>
-                T
-              </div>
+              <img 
+                src="/logo.jpg" 
+                alt="TimeValue Logo" 
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '12px',
+                  marginBottom: '8px',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                  objectFit: 'cover'
+                }}
+              />
               <h2 style={{ 
                 margin: '0', 
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -230,21 +226,17 @@ const AppLayout = ({ onLogout, userInfo }) => {
               </div>
             </>
           ) : (
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-              fontSize: '20px',
-              fontWeight: 'bold',
-              color: '#fff'
-            }}>
-              T
-            </div>
+            <img 
+              src="/logo.jpg" 
+              alt="TimeValue Logo" 
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                objectFit: 'cover'
+              }}
+            />
           )}
         </div>
         <Menu
