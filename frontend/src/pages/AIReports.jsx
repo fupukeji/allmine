@@ -85,10 +85,12 @@ const AIReports = () => {
     // 组件卸载时清除定时器
     return () => {
       if (autoRefreshTimer) {
+        console.log('🧹 组件卸载，清除轮询定时器');
         clearInterval(autoRefreshTimer);
+        setAutoRefreshTimer(null);
       }
     };
-  }, []);
+  }, [autoRefreshTimer]);
 
   // 检查API Token
   const checkApiToken = async () => {
@@ -282,66 +284,80 @@ const AIReports = () => {
         
         // 清除之前的定时器
         if (autoRefreshTimer) {
+          console.log('🧹 清除之前的轮询定时器');
           clearInterval(autoRefreshTimer);
           setAutoRefreshTimer(null);
         }
         
         // 启动轮询：每3秒检查报告状态
         let checkCount = 0;
-        const maxCheckCount = 100; // 最多轮询5分钟 (100次 x 3秒)
-        let timer = null; // 在外部声明
+        const maxCheckCount = 60; // 最多轮询3分钟 (60次 x 3秒)
+        let isPolling = true; // 轮询标志
         
         const pollReport = async () => {
+          // 如果已停止轮询，直接返回
+          if (!isPolling) {
+            console.log('⛔ 轮询已停止，跳过本次检查');
+            return;
+          }
+          
           try {
+            checkCount++;
+            console.log(`🔄 第${checkCount}次轮询报告状态 (报告ID: ${reportId})`);
+            
             const reportResponse = await request.get(`/reports/${reportId}`);
-            console.log('轮询报告状态:', reportResponse); // 调试日志
             
             if (reportResponse.success) {
               const report = reportResponse.data;
-              console.log('报告状态:', report.status, '报告ID:', reportId); // 调试
+              console.log('📊 报告状态:', report.status);
               
               if (report.status === 'completed') {
-                // 生成成功
+                // 生成成功 - 停止轮询
                 console.log('✅ 报告生成完成，停止轮询');
-                if (timer) {
-                  clearInterval(timer);
+                isPolling = false;
+                if (autoRefreshTimer) {
+                  clearInterval(autoRefreshTimer);
+                  setAutoRefreshTimer(null);
                 }
-                setAutoRefreshTimer(null);
                 message.success('报告生成成功！');
                 await loadReports();
                 await loadStats();
-                return; // 立即退出
+                return;
               } else if (report.status === 'failed') {
-                // 生成失败
+                // 生成失败 - 停止轮询
                 console.log('❌ 报告生成失败，停止轮询');
-                if (timer) {
-                  clearInterval(timer);
+                isPolling = false;
+                if (autoRefreshTimer) {
+                  clearInterval(autoRefreshTimer);
+                  setAutoRefreshTimer(null);
                 }
-                setAutoRefreshTimer(null);
                 message.error(`报告生成失败：${report.error_message || '未知错误'}`);
                 await loadReports();
-                return; // 立即退出
-              } else {
-                console.log('🔄 报告仍在生成中...', `第${checkCount + 1}次轮询`);
+                return;
               }
+              // 状态为 pending 或 generating - 继续轮询
             }
           } catch (error) {
-            console.error('轮询报告状态失败:', error);
+            console.error('❌ 轮询报告状态失败:', error);
+            // 继续轮询，不中断
           }
           
-          checkCount++;
+          // 超时检查
           if (checkCount >= maxCheckCount) {
-            console.log('⚠️ 轮询超时，停止轮询');
-            if (timer) {
-              clearInterval(timer);
+            console.log('⚠️ 轮询超时（3分钟），停止轮询');
+            isPolling = false;
+            if (autoRefreshTimer) {
+              clearInterval(autoRefreshTimer);
+              setAutoRefreshTimer(null);
             }
-            setAutoRefreshTimer(null);
-            message.warning('轮询超时，请手动刷新查看报告状态');
+            message.warning('报告生成时间较长，请稍后手动刷新查看');
           }
         };
         
-        timer = setInterval(pollReport, 3000); // 每3秒轮询一次
-        setAutoRefreshTimer(timer);
+        // 设置定时器
+        const newTimer = setInterval(pollReport, 3000);
+        setAutoRefreshTimer(newTimer);
+        console.log('⏰ 启动轮询定时器，间隔3秒');
         
         // 立即执行第一次轮询
         pollReport();
@@ -436,6 +452,16 @@ const AIReports = () => {
   const handleViewWorkflow = (reportId) => {
     setWorkflowReportId(reportId);
     setWorkflowModalVisible(true);
+  };
+  
+  // 手动停止轮询
+  const handleStopPolling = () => {
+    if (autoRefreshTimer) {
+      console.log('🛑 用户手动停止轮询');
+      clearInterval(autoRefreshTimer);
+      setAutoRefreshTimer(null);
+      message.info('已停止自动刷新');
+    }
   };
   
   // 行选择配置
@@ -664,6 +690,22 @@ const AIReports = () => {
         <Button icon={<SettingOutlined />} onClick={() => setTokenModalVisible(true)}>
           配置API Key
         </Button>
+        
+        {/* 轮询状态指示器 */}
+        {autoRefreshTimer && (
+          <>
+            <Tag icon={<SyncOutlined spin />} color="processing">
+              正在自动刷新...
+            </Tag>
+            <Button 
+              size="small" 
+              danger 
+              onClick={handleStopPolling}
+            >
+              停止自动刷新
+            </Button>
+          </>
+        )}
         
         {/* 搜索栏 */}
         <Input.Search
