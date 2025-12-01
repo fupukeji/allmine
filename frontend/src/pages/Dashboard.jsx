@@ -20,6 +20,7 @@ import {
 import { getProjects, getStatistics } from '../services/projects'
 import { getAssetsStatistics } from '../services/assets'
 import { getAnalyticsOverview } from '../services/analytics'
+import PageHeader from '../components/PageHeader'
 import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
@@ -298,6 +299,11 @@ const Dashboard = () => {
 
   return (
     <div style={{ background: '#f5f7fa', minHeight: 'calc(100vh - 64px)', margin: '-24px', padding: '24px' }}>
+      <PageHeader 
+        title="仪表盘"
+        subtitle="实时监控您的资产状况和项目进度"
+        icon={<DashboardOutlined />}
+      />
       <style>
         {`
           @keyframes pulse {

@@ -52,6 +52,7 @@ import {
 } from '../services/assets'
 import { getAssetIncomes, createAssetIncome, getAssetIncomeAnalysis } from '../services/income'
 import { getCategories } from '../services/categories'
+import PageHeader from '../components/PageHeader'
 
 const { Title } = Typography
 const { TextArea } = Input
