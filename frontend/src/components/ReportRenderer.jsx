@@ -30,6 +30,7 @@ const ReportRenderer = ({ content }) => {
     const chartData = content.chart_data;
     const intelligentInsights = content.intelligent_insights;
     const categoryHierarchy = content.intelligent_insights?.category_hierarchy;
+    const qualitativeAnalysis = content.qualitative_analysis;  // 【新增】定性分析结论
     
     return (
       <div style={{ 
@@ -46,6 +47,137 @@ const ReportRenderer = ({ content }) => {
         {/* 智能洞察卡片 - 置顶显示 */}
         {intelligentInsights && (
           <IntelligentInsightsCard insights={intelligentInsights} />
+        )}
+
+        {/* 【新增】定性分析结论卡片 */}
+        {qualitativeAnalysis && (
+          <Card 
+            title={
+              <span style={{ fontSize: 18, fontWeight: 'bold' }}>
+                🧐 AI定性分析结论
+              </span>
+            }
+            style={{ 
+              marginBottom: 24,
+              borderLeft: '4px solid #1890ff',
+              boxShadow: '0 4px 16px rgba(24, 144, 255, 0.15)'
+            }}
+          >
+            {/* 整体评估 */}
+            <div style={{ marginBottom: 16 }}>
+              <Text strong style={{ fontSize: 15 }}>整体评估：</Text>
+              <Tag 
+                color={
+                  qualitativeAnalysis.overall_assessment?.includes('优秀') ? 'green' :
+                  qualitativeAnalysis.overall_assessment?.includes('良好') ? 'blue' :
+                  qualitativeAnalysis.overall_assessment?.includes('中等') ? 'orange' : 'red'
+                }
+                style={{ fontSize: 14, padding: '4px 12px', marginLeft: 8 }}
+              >
+                {qualitativeAnalysis.overall_assessment}
+              </Tag>
+              <Tag 
+                color={
+                  qualitativeAnalysis.severity_level === '低' ? 'green' :
+                  qualitativeAnalysis.severity_level === '中' ? 'orange' : 'red'
+                }
+                style={{ fontSize: 14, padding: '4px 12px', marginLeft: 8 }}
+              >
+                紧急程度：{qualitativeAnalysis.severity_level}
+              </Tag>
+            </div>
+
+            {/* 分析总结 */}
+            {qualitativeAnalysis.analysis_summary && (
+              <div style={{ 
+                marginBottom: 16, 
+                padding: 12, 
+                background: '#f0f5ff', 
+                borderRadius: 4,
+                borderLeft: '3px solid #1890ff'
+              }}>
+                <Paragraph style={{ margin: 0, fontSize: 14, lineHeight: 1.8 }}>
+                  {qualitativeAnalysis.analysis_summary}
+                </Paragraph>
+              </div>
+            )}
+
+            <Row gutter={16}>
+              {/* 关键问题 */}
+              {qualitativeAnalysis.key_issues && qualitativeAnalysis.key_issues.length > 0 && (
+                <Col span={12}>
+                  <div style={{ marginBottom: 16 }}>
+                    <Title level={5} style={{ color: '#ff4d4f', marginBottom: 8 }}>
+                      ⚠️ 关键问题（{qualitativeAnalysis.key_issues.length}个）
+                    </Title>
+                    <ul style={{ paddingLeft: 20, margin: 0 }}>
+                      {qualitativeAnalysis.key_issues.map((issue, idx) => (
+                        <li key={idx} style={{ marginBottom: 8, fontSize: 13, color: '#ff4d4f' }}>
+                          {issue}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Col>
+              )}
+
+              {/* 优势亮点 */}
+              {qualitativeAnalysis.strengths && qualitativeAnalysis.strengths.length > 0 && (
+                <Col span={12}>
+                  <div style={{ marginBottom: 16 }}>
+                    <Title level={5} style={{ color: '#52c41a', marginBottom: 8 }}>
+                      ✨ 优势亮点（{qualitativeAnalysis.strengths.length}个）
+                    </Title>
+                    <ul style={{ paddingLeft: 20, margin: 0 }}>
+                      {qualitativeAnalysis.strengths.map((strength, idx) => (
+                        <li key={idx} style={{ marginBottom: 8, fontSize: 13, color: '#52c41a' }}>
+                          {strength}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Col>
+              )}
+            </Row>
+
+            <Row gutter={16}>
+              {/* 重点关注 */}
+              {qualitativeAnalysis.focus_areas && qualitativeAnalysis.focus_areas.length > 0 && (
+                <Col span={12}>
+                  <div>
+                    <Title level={5} style={{ color: '#1890ff', marginBottom: 8 }}>
+                      🎯 重点关注领域
+                    </Title>
+                    <div>
+                      {qualitativeAnalysis.focus_areas.map((area, idx) => (
+                        <Tag key={idx} color="blue" style={{ marginBottom: 8, fontSize: 13 }}>
+                          {area}
+                        </Tag>
+                      ))}
+                    </div>
+                  </div>
+                </Col>
+              )}
+
+              {/* 初步建议 */}
+              {qualitativeAnalysis.preliminary_recommendations && qualitativeAnalysis.preliminary_recommendations.length > 0 && (
+                <Col span={12}>
+                  <div>
+                    <Title level={5} style={{ color: '#722ed1', marginBottom: 8 }}>
+                      💡 初步建议
+                    </Title>
+                    <ul style={{ paddingLeft: 20, margin: 0 }}>
+                      {qualitativeAnalysis.preliminary_recommendations.map((rec, idx) => (
+                        <li key={idx} style={{ marginBottom: 8, fontSize: 13 }}>
+                          {rec}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Col>
+              )}
+            </Row>
+          </Card>
         )}
 
         {/* 分类层级树形图 */}

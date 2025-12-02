@@ -29,7 +29,7 @@ const WorkflowVisualization = ({ reportId, refreshInterval = 3000 }) => {
     'compress_data': '数据压缩',
     'agent_decide_comparison': 'Agent决策',
     'query_previous_data': '查询上期数据',
-    'ai_preanalysis': 'AI预分析',
+    'ai_preanalysis': 'AI定性分析',  // 更新名称
     'generate_report': '生成报告',
     'evaluate_quality': '质量评估',
     'save_report': '保存报告',
@@ -268,6 +268,53 @@ const WorkflowVisualization = ({ reportId, refreshInterval = 3000 }) => {
                   <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
                     固定资产: {node.data_summary.fixed_assets_count}项 | 
                     虚拟资产: {node.data_summary.virtual_assets_count}项
+                  </div>
+                )}
+                
+                {/* 【新增】定性分析结果展示 */}
+                {node.node === 'ai_preanalysis' && node.qualitative_summary && (
+                  <div style={{ 
+                    marginTop: 8, 
+                    padding: 12, 
+                    background: '#f0f5ff', 
+                    borderLeft: '3px solid #1890ff',
+                    borderRadius: 4
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 'bold', color: '#1890ff', marginBottom: 6 }}>
+                      🧐 定性分析结论
+                    </div>
+                    <div style={{ fontSize: 12 }}>
+                      <p style={{ margin: '4px 0' }}>
+                        <strong>整体评估:</strong> 
+                        <Tag color={
+                          node.qualitative_summary.assessment?.includes('优秀') ? 'green' :
+                          node.qualitative_summary.assessment?.includes('良好') ? 'blue' :
+                          node.qualitative_summary.assessment?.includes('中等') ? 'orange' : 'red'
+                        }>
+                          {node.qualitative_summary.assessment || '未知'}
+                        </Tag>
+                      </p>
+                      <p style={{ margin: '4px 0' }}>
+                        <strong>紧急程度:</strong> 
+                        <Tag color={
+                          node.qualitative_summary.severity === '低' ? 'green' :
+                          node.qualitative_summary.severity === '中' ? 'orange' : 'red'
+                        }>
+                          {node.qualitative_summary.severity || '未知'}
+                        </Tag>
+                      </p>
+                      {node.qualitative_summary.issues_count > 0 && (
+                        <p style={{ margin: '4px 0', color: '#ff4d4f' }}>
+                          <strong>关键问题:</strong> {node.qualitative_summary.issues_count} 个
+                        </p>
+                      )}
+                      {node.qualitative_summary.focus_areas && node.qualitative_summary.focus_areas.length > 0 && (
+                        <p style={{ margin: '4px 0' }}>
+                          <strong>重点关注:</strong> {node.qualitative_summary.focus_areas.slice(0, 2).join(', ')}
+                          {node.qualitative_summary.focus_areas.length > 2 && ' ...'}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
                 
