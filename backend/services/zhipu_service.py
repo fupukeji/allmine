@@ -1191,12 +1191,15 @@ class ZhipuAiService:
             }
         }
     
-    def generate_weekly_report(self, user_id, start_date, end_date):
+    def generate_weekly_report(self, user_id, start_date, end_date, 
+                              qualitative_analysis=None, intelligent_insights=None):
         """
         生成周报（三阶段流程 - 纯文本中间格式）
         :param user_id: 用户ID
         :param start_date: 开始日期
         :param end_date: 结束日期
+        :param qualitative_analysis: 【新增】AI定性分析结论
+        :param intelligent_insights: 【新增】智能洞察指标
         :return: 报告内容（JSON格式）
         """
         print("\n" + "#"*80)
@@ -1245,8 +1248,25 @@ class ZhipuAiService:
         print("[第三阶段] 报告生成开始")
         print("="*80)
         
-        # 构造报告生成Prompt（使用配置文件，传入对比数据）
-        prompt = get_weekly_report_prompt(compressed_text, ai_insights_text, current_data, previous_data)
+        # 【增强】显示定性分析信息
+        if qualitative_analysis:
+            print("\n🎯 [利用定性分析] AI已提供定性结论，将指导报告生成")
+            print(f"  - 整体评估: {qualitative_analysis.get('overall_assessment')}")
+            print(f"  - 紧急程度: {qualitative_analysis.get('severity_level')}")
+            print(f"  - 关键问题: {len(qualitative_analysis.get('key_issues', []))}个")
+            print(f"  - 重点关注: {', '.join(qualitative_analysis.get('focus_areas', [])[:2])}")
+        
+        if intelligent_insights:
+            print("\n📊 [智能洞察] 已提供智能指标，将增强分析深度")
+            print(f"  - 固定资产健康度: {intelligent_insights.get('fixed_asset_health', 0):.1f}/100")
+            print(f"  - 虚拟资产效率: {intelligent_insights.get('virtual_asset_efficiency', 0):.1f}/100")
+        
+        # 构造报告生成Prompt（使用配置文件，传入对比数据 + 定性分析）
+        prompt = get_weekly_report_prompt(
+            compressed_text, ai_insights_text, current_data, previous_data,
+            intelligent_insights=intelligent_insights,  # 【新增】
+            qualitative_analysis=qualitative_analysis   # 【新增】
+        )
         print(f"[Prompt版本] {PROMPT_VERSION}")
         
         print(f"\n[报告Prompt] Prompt长度: {len(prompt)} 字符")
@@ -1285,6 +1305,8 @@ class ZhipuAiService:
             "report_type": "markdown",
             "content": markdown_report,
             "chart_data": chart_data,  # 新增图表数据
+            "intelligent_insights": intelligent_insights,  # 【新增】智能洞察
+            "qualitative_analysis": qualitative_analysis,  # 【新增】定性分析
             "data_snapshot": current_data,
             "generated_at": current_data['period']['end_date']
         }
@@ -1299,9 +1321,12 @@ class ZhipuAiService:
         
         return json.dumps(result, ensure_ascii=False)
     
-    def generate_monthly_report(self, user_id, start_date, end_date):
+    def generate_monthly_report(self, user_id, start_date, end_date,
+                               qualitative_analysis=None, intelligent_insights=None):
         """
         生成月报（三阶段流程 - Markdown格式）
+        :param qualitative_analysis: 【新增】AI定性分析结论
+        :param intelligent_insights: 【新增】智能洞察指标
         """
         print("\n" + "#"*80)
         print("# 月报生成三阶段流程开始")
@@ -1370,13 +1395,16 @@ class ZhipuAiService:
         
         return json.dumps(result, ensure_ascii=False)
     
-    def generate_custom_report(self, user_id, start_date, end_date, focus_areas=None):
+    def generate_custom_report(self, user_id, start_date, end_date, focus_areas=None,
+                              qualitative_analysis=None, intelligent_insights=None):
         """
         生成自定义报告（Markdown格式）
         :param user_id: 用户ID
         :param start_date: 开始日期
         :param end_date: 结束日期
         :param focus_areas: 关注领域列表
+        :param qualitative_analysis: 【新增】AI定性分析结论
+        :param intelligent_insights: 【新增】智能洞察指标
         :return: 报告内容（Markdown格式）
         """
         print("\n" + "#"*80)

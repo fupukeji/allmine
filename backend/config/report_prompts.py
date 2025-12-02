@@ -5,9 +5,10 @@ AI报告生成Prompt配置模块
 
 PROMPT_VERSION = "6.0.0"
 
-def get_weekly_report_prompt(compressed_text, ai_insights_text, current_data, previous_data=None, intelligent_insights=None):
+def get_weekly_report_prompt(compressed_text, ai_insights_text, current_data, previous_data=None, 
+                            intelligent_insights=None, qualitative_analysis=None):
     """
-    获取周报生成Prompt（增强版 - 利用智能洞察）
+    获取周报生成Prompt（增强版 - 利用智能洞察 + 定性分析）
     
     Args:
         compressed_text: 压缩后的数据文本（已包含当前期和对比信息）
@@ -15,6 +16,7 @@ def get_weekly_report_prompt(compressed_text, ai_insights_text, current_data, pr
         current_data: 当前期数据字典
         previous_data: 上期数据字典（可选，用于对比）
         intelligent_insights: 智能洞察指标字典（新增）
+        qualitative_analysis: AI定性分析结论（【新增】核心！）
     
     Returns:
         str: 完整的Prompt
@@ -54,6 +56,44 @@ def get_weekly_report_prompt(compressed_text, ai_insights_text, current_data, pr
 3. 如收入质量<60，评估ROI合理性，建议调整资产结构
 4. 如均衡度<60，建议理想配置比例（固定60-80%，虚拟20-40%）"""
     
+    # 【新增】定性分析结论注入
+    qualitative_context = ""
+    if qualitative_analysis:
+        qa = qualitative_analysis
+        key_issues_text = '\n'.join(f'- {issue}' for issue in qa.get('key_issues', []))
+        strengths_text = '\n'.join(f'- {strength}' for strength in qa.get('strengths', []))
+        focus_areas_text = '\n'.join(f'- {area}' for area in qa.get('focus_areas', []))
+        recommendations_text = '\n'.join(f'- {rec}' for rec in qa.get('preliminary_recommendations', []))
+        
+        qualitative_context = f"""
+
+【核心】AI定性分析结论（请基于此结论深入分析数据）：
+
+🎯 整体评估：{qa.get('overall_assessment', '未知')}
+⚠️ 紧急程度：{qa.get('severity_level', '未知')}
+
+💔 关键问题（必须重点分析）：
+{key_issues_text if key_issues_text else '- 无明显问题'}
+
+✨ 优势亮点：
+{strengths_text if strengths_text else '- 无特别突出之处'}
+
+🎯 重点关注领域（必须深入讨论）：
+{focus_areas_text if focus_areas_text else '- 保持现状'}
+
+💡 初步建议：
+{recommendations_text if recommendations_text else '- 持续监控'}
+
+📝 分析总结：
+{qa.get('analysis_summary', '')}
+
+⚡ 重要指示：
+1. 必须针对上述关键问题，从数据中找出证据和根本原因
+2. 必须针对重点关注领域，提供具体的数据分析和改进建议
+3. 优势亮点要表扬，问题要深入剖析，建议要可执行
+4. 不要重复定性结论的原话，而是基于它进行定量分析
+"""
+    
     # 构建简洁对比说明
     if has_comparison:
         prev_fa = previous_data['fixed_assets']
@@ -87,7 +127,7 @@ def get_weekly_report_prompt(compressed_text, ai_insights_text, current_data, pr
 {context}
 
 数据：
-{compressed_text}{insights_context}
+{compressed_text}{insights_context}{qualitative_context}
 
 核心要求：
 1. 用真实数据，禁止XX占位符
@@ -166,22 +206,28 @@ def get_weekly_report_prompt(compressed_text, ai_insights_text, current_data, pr
 """
 
 
-def get_monthly_report_prompt(compressed_text, ai_insights_text, current_data, previous_data=None, intelligent_insights=None):
+def get_monthly_report_prompt(compressed_text, ai_insights_text, current_data, previous_data=None, 
+                             intelligent_insights=None, qualitative_analysis=None):
     """
     获取月报生成Prompt（复用周报逻辑）
     """
-    return get_weekly_report_prompt(compressed_text, ai_insights_text, current_data, previous_data, intelligent_insights).replace('周报', '月报').replace('本周', '本月')
+    return get_weekly_report_prompt(compressed_text, ai_insights_text, current_data, previous_data, 
+                                    intelligent_insights, qualitative_analysis).replace('周报', '月报').replace('本周', '本月')
 
 
-def get_yearly_report_prompt(compressed_text, ai_insights_text, current_data, intelligent_insights=None):
+def get_yearly_report_prompt(compressed_text, ai_insights_text, current_data, 
+                            intelligent_insights=None, qualitative_analysis=None):
     """
     获取年报生成Prompt
     """
-    return get_monthly_report_prompt(compressed_text, ai_insights_text, current_data, None, intelligent_insights).replace('月报', '年报').replace('本月', '本年')
+    return get_monthly_report_prompt(compressed_text, ai_insights_text, current_data, None, 
+                                    intelligent_insights, qualitative_analysis).replace('月报', '年报').replace('本月', '本年')
 
 
-def get_custom_report_prompt(compressed_text, ai_insights_text, current_data, previous_data=None, intelligent_insights=None):
+def get_custom_report_prompt(compressed_text, ai_insights_text, current_data, previous_data=None, 
+                            intelligent_insights=None, qualitative_analysis=None):
     """
-    获取自定义报告Prompt
+    获取自定义报告Prom pt
     """
-    return get_weekly_report_prompt(compressed_text, ai_insights_text, current_data, previous_data, intelligent_insights).replace('周报', '分析报告').replace('本周', '本期')
+    return get_weekly_report_prompt(compressed_text, ai_insights_text, current_data, previous_data, 
+                                   intelligent_insights, qualitative_analysis).replace('周报', '分析报告').replace('本周', '本期')
