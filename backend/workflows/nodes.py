@@ -690,11 +690,13 @@ def _generate_simple_qualitative_analysis(intelligent_insights: Dict[str, Any]) 
 
 async def generate_report_node(state: ReportWorkflowState) -> ReportWorkflowState:
     """
-    N7: 生成报告节点
-    - 调用AI生成完整报告
+    N7: 生成报告节点（基于定性分析的定量报告）
+    - 基于定性分析结论调用AI生成详细报告
     - 解析JSON格式内容
+    - 将定性结论注入报告，形成完整分析链
     """
     from services.zhipu_service import ZhipuAiService
+    import json
     
     logger.info(f"📝 [N7-生成报告] 开始")
     
@@ -704,6 +706,18 @@ async def generate_report_node(state: ReportWorkflowState) -> ReportWorkflowStat
         model = task_context.get("model", "glm-4-flash")
         report_type = task_context.get("report_type", "custom")
         
+        # 获取定性分析结论
+        qualitative_analysis = state.get("qualitative_analysis")
+        intelligent_insights = state.get("intelligent_insights")
+        
+        if qualitative_analysis:
+            logger.info(f"🎯 [N7-生成报告] 利用定性分析结论指导报告生成")
+            logger.info(f"   - 整体评估: {qualitative_analysis.get('overall_assessment')}")
+            logger.info(f"   - 关键问题: {len(qualitative_analysis.get('key_issues', []))}个")
+            logger.info(f"   - 重点关注: {', '.join(qualitative_analysis.get('focus_areas', [])[:2])}")
+        else:
+            logger.warning(f"⚠️ [N7-生成报告] 未找到定性分析，使用传统模式生成报告")
+        
         service = ZhipuAiService(api_token=api_key, model=model)
         
         # 根据报告类型调用对应的生成方法
@@ -712,17 +726,43 @@ async def generate_report_node(state: ReportWorkflowState) -> ReportWorkflowStat
         end_date = task_context["end_date"]
         focus_areas = task_context.get("focus_areas", [])
         
+        # 【增强】将定性分析和智能洞察传递给报告生成方法
         if report_type == 'weekly':
-            content = service.generate_weekly_report(user_id, start_date, end_date)
+            content = service.generate_weekly_report(
+                user_id, start_date, end_date,
+                qualitative_analysis=qualitative_analysis,
+                intelligent_insights=intelligent_insights
+            )
         elif report_type == 'monthly':
-            content = service.generate_monthly_report(user_id, start_date, end_date)
+            content = service.generate_monthly_report(
+                user_id, start_date, end_date,
+                qualitative_analysis=qualitative_analysis,
+                intelligent_insights=intelligent_insights
+            )
         elif report_type == 'yearly':
             content = service.generate_custom_report(
                 user_id, start_date, end_date, 
-                focus_areas or ['年度资产增长趋势', '年度收益表现', '资产配置优化']
+                focus_areas or ['年度资产增长趋势', '年度收益表现', '资产配置优化'],
+                qualitative_analysis=qualitative_analysis,
+                intelligent_insights=intelligent_insights
             )
         else:  # custom
-            content = service.generate_custom_report(user_id, start_date, end_date, focus_areas)
+            content = service.generate_custom_report(
+                user_id, start_date, end_date, focus_areas,
+                qualitative_analysis=qualitative_analysis,
+                intelligent_insights=intelligent_insights
+            )
+        
+        # 【增强】将定性分析注入报告内容
+        if qualitative_analysis and content:
+            try:
+                report_data = json.loads(content)
+                # 添加定性分析到报告中
+                report_data['qualitative_analysis'] = qualitative_analysis
+                content = json.dumps(report_data, ensure_ascii=False, indent=2)
+                logger.info(f"✅ [N7-生成报告] 已将定性分析注入报告")
+            except json.JSONDecodeError:
+                logger.warning(f"⚠️ [N7-生成报告] 报告内容非JSON格式，跳过注入")
         
         state["report_content"] = content
         
@@ -732,7 +772,8 @@ async def generate_report_node(state: ReportWorkflowState) -> ReportWorkflowStat
             "node": "generate_report",
             "timestamp": datetime.utcnow().isoformat(),
             "status": "completed",
-            "content_length": len(content)
+            "content_length": len(content),
+            "used_qualitative_analysis": qualitative_analysis is not None
         })
         
     except Exception as e:
