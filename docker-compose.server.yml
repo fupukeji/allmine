@@ -14,9 +14,9 @@ services:
       FLASK_ENV: ${FLASK_ENV:-production}
       FLASK_DEBUG: ${FLASK_DEBUG:-False}
       
-      # 数据库配置（连接宿主机MySQL，使用127.0.0.1）
+      # 数据库配置（连接宿主机MySQL）
       DB_TYPE: mysql
-      DB_HOST: 127.0.0.1
+      DB_HOST: ${DB_HOST:-127.0.0.1}
       DB_PORT: ${DB_PORT:-3306}
       DB_NAME: ${DB_NAME:-timevalue}
       DB_USER: ${DB_USER:-timevalue}
