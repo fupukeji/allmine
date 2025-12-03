@@ -475,6 +475,68 @@ const AIReports = () => {
   // 渲染报告内容
   const renderReportContent = (report) => {
     try {
+      // 如果content是字符串且以<div开头，直接渲染HTML
+      if (typeof report.content === 'string' && report.content.trim().startsWith('<div')) {
+        return (
+          <>
+            {/* 加入报告样式 */}
+            <style>{`
+              .ai-report-content {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+              }
+              .ai-report-content h1 {
+                font-size: 32px;
+                font-weight: bold;
+                margin-bottom: 20px;
+              }
+              .ai-report-content h2 {
+                font-size: 22px;
+                font-weight: 600;
+                margin-top: 30px;
+                margin-bottom: 15px;
+              }
+              .ai-report-content h3 {
+                font-size: 16px;
+                font-weight: 600;
+                margin-top: 20px;
+                margin-bottom: 10px;
+              }
+              .ai-report-content p {
+                line-height: 1.8;
+                margin-bottom: 10px;
+                color: #595959;
+              }
+              .ai-report-content ul, .ai-report-content ol {
+                line-height: 2;
+                padding-left: 30px;
+              }
+              .ai-report-content li {
+                margin-bottom: 8px;
+              }
+              .ai-report-content strong {
+                font-weight: 600;
+                color: #262626;
+              }
+              @media print {
+                .ai-report-content {
+                  max-width: 100%;
+                }
+              }
+            `}</style>
+            <div 
+              dangerouslySetInnerHTML={{ __html: report.content }}
+              style={{ 
+                lineHeight: 1.8,
+                fontSize: 14,
+                padding: '20px 0'
+              }}
+            />
+          </>
+        );
+      }
+      
       const content = typeof report.content === 'string' ? JSON.parse(report.content) : report.content;
       
       // 判断是否为Markdown/Text格式
@@ -488,7 +550,21 @@ const AIReports = () => {
 
     } catch (error) {
       console.error('报告内容解析错误:', error);
-      return <Text type="danger">报告内容解析失败</Text>;
+      
+      // 如果解析失败，尝试直接渲染HTML
+      if (typeof report.content === 'string' && report.content.includes('<div')) {
+        return (
+          <div 
+            dangerouslySetInnerHTML={{ __html: report.content }}
+            style={{ 
+              lineHeight: 1.8,
+              fontSize: 14
+            }}
+          />
+        );
+      }
+      
+      return <Text type="danger">报告内容解析失败: {error.message}</Text>;
     }
   };
 
@@ -693,18 +769,9 @@ const AIReports = () => {
         
         {/* 轮询状态指示器 */}
         {autoRefreshTimer && (
-          <>
-            <Tag icon={<SyncOutlined spin />} color="processing">
-              正在自动刷新...
-            </Tag>
-            <Button 
-              size="small" 
-              danger 
-              onClick={handleStopPolling}
-            >
-              停止自动刷新
-            </Button>
-          </>
+          <Tag icon={<SyncOutlined spin />} color="processing">
+            报告生成中，自动刷新...
+          </Tag>
         )}
         
         {/* 搜索栏 */}

@@ -87,11 +87,18 @@ def create_asset_income(asset_id):
         # 转换日期字段
         try:
             income_date = datetime.strptime(data['income_date'], '%Y-%m-%d').date()
+            expected_date = None
+            actual_date = None
             recurring_end_date = None
+            
+            if data.get('expected_date'):
+                expected_date = datetime.strptime(data['expected_date'], '%Y-%m-%d').date()
+            if data.get('actual_date'):
+                actual_date = datetime.strptime(data['actual_date'], '%Y-%m-%d').date()
             if data.get('recurring_end_date'):
                 recurring_end_date = datetime.strptime(data['recurring_end_date'], '%Y-%m-%d').date()
-        except ValueError:
-            return jsonify({'code': 400, 'message': '日期格式错误，请使用 YYYY-MM-DD 格式'}), 400
+        except ValueError as e:
+            return jsonify({'code': 400, 'message': f'日期格式错误，请使用 YYYY-MM-DD 格式: {str(e)}'}), 400
         
         # 创建收入记录
         income = AssetIncome(
@@ -99,14 +106,20 @@ def create_asset_income(asset_id):
             income_type=data['income_type'],
             amount=data['amount'],
             expected_amount=data.get('expected_amount'),
+            cost=data.get('cost', 0),
+            tax_rate=data.get('tax_rate', 0),
             income_date=income_date,
+            expected_date=expected_date,
+            actual_date=actual_date,
             description=data.get('description', ''),
+            notes=data.get('notes', ''),
             payer=data.get('payer', ''),
+            payment_method=data.get('payment_method', 'bank_transfer'),
             contract_reference=data.get('contract_reference', ''),
+            invoice_number=data.get('invoice_number', ''),
             is_recurring=data.get('is_recurring', False),
-            recurring_period=data.get('recurring_period'),
+            recurring_frequency=data.get('recurring_frequency'),
             recurring_end_date=recurring_end_date,
-            tax_amount=data.get('tax_amount', 0),
             status=data.get('status', 'pending')
         )
         
@@ -117,10 +130,14 @@ def create_asset_income(asset_id):
             'code': 200,
             'message': '收入记录创建成功',
             'data': income.to_dict()
-        }), 201
+        }), 200  # 改为200状态码
         
     except Exception as e:
         db.session.rollback()
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f'创建收入记录失败: {str(e)}')
+        print(error_detail)
         return jsonify({'code': 500, 'message': f'创建收入记录失败: {str(e)}'}), 500
 
 @asset_income_bp.route('/assets/<int:asset_id>/incomes/<int:income_id>', methods=['PUT'])
@@ -177,7 +194,7 @@ def update_asset_income(asset_id, income_id):
             'code': 200,
             'message': '收入记录更新成功',
             'data': income.to_dict()
-        })
+        }), 200  # 确保返回200状态码
         
     except Exception as e:
         db.session.rollback()
@@ -202,7 +219,7 @@ def delete_asset_income(asset_id, income_id):
         db.session.delete(income)
         db.session.commit()
         
-        return jsonify({'code': 200, 'message': '收入记录删除成功'})
+        return jsonify({'code': 200, 'message': '收入记录删除成功'}), 200  # 确保返回200状态码
         
     except Exception as e:
         db.session.rollback()
