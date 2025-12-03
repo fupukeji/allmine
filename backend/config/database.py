@@ -74,13 +74,14 @@ class DatabaseSettings:
     """数据库通用设置"""
     
     # 连接池配置
-    POOL_SIZE = 10
-    POOL_RECYCLE = 3600  # 1小时回收连接
+    POOL_SIZE = 5  # 减少连接池大小
+    POOL_RECYCLE = 1800  # 30分钟回收连接（避免超时）
     POOL_PRE_PING = True  # 连接前ping测试
+    POOL_TIMEOUT = 30  # 连接超时时间
     
     # 查询配置
-    MAX_OVERFLOW = 20
-    ECHO = False  # 是否打印SQL语句（开发环境可设为True）
+    MAX_OVERFLOW = 10  # 减少溢出连接数
+    ECHO = False  # 是否打印SQL语句（开发环境可访为True）
     
     @staticmethod
     def get_engine_options():
@@ -89,5 +90,11 @@ class DatabaseSettings:
             'pool_size': DatabaseSettings.POOL_SIZE,
             'pool_recycle': DatabaseSettings.POOL_RECYCLE,
             'pool_pre_ping': DatabaseSettings.POOL_PRE_PING,
-            'max_overflow': DatabaseSettings.MAX_OVERFLOW
+            'pool_timeout': DatabaseSettings.POOL_TIMEOUT,
+            'max_overflow': DatabaseSettings.MAX_OVERFLOW,
+            'connect_args': {
+                'connect_timeout': 10,
+                'read_timeout': 30,
+                'write_timeout': 30
+            }
         }
