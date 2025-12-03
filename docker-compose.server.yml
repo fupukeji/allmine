@@ -36,17 +36,3 @@ services:
     network_mode: host
     volumes:
       - ./backend/logs:/app/logs
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - timevalue-network
-
-networks:
-  timevalue-network:
-    driver: bridge
