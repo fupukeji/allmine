@@ -111,6 +111,7 @@ def register():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """用户登录"""
+    import traceback
     try:
         data = request.get_json(force=True)
         
@@ -154,6 +155,8 @@ def login():
         })
         
     except Exception as e:
+        print(f"[登录错误] {str(e)}")
+        traceback.print_exc()
         return jsonify({
             'code': 500,
             'message': f'登录失败：{str(e)}'
