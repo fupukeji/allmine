@@ -7,6 +7,7 @@ echo "================================"
 
 # 等待MySQL就绪
 echo "⏳ Waiting for MySQL to be ready..."
+echo "🔍 DB_HOST=$DB_HOST, DB_PORT=$DB_PORT, DB_USER=$DB_USER, DB_NAME=$DB_NAME"
 max_retries=30
 retry_count=0
 
@@ -25,6 +26,7 @@ try:
     conn.close()
     exit(0)
 except Exception as e:
+    print(f'Error: {e}', file=__import__('sys').stderr)
     exit(1)
 " 2>/dev/null; then
         echo "✅ MySQL is ready!"
