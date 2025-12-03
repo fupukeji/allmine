@@ -185,20 +185,68 @@ const ReportRenderer = ({ content }) => {
           <CategoryHierarchyTree categoryHierarchy={categoryHierarchy} />
         )}
 
-        {/* 报告标题区域 */}
+        {/* 报告标题区域 - 优化后的设计 */}
         <div style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          padding: '24px 32px',
-          borderRadius: '8px',
-          marginBottom: '32px',
-          color: '#fff'
+          padding: '40px',
+          borderRadius: '16px',
+          marginBottom: '40px',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)'
         }}>
-          <Title level={1} style={{ color: '#fff', margin: 0, fontSize: 32, fontWeight: 700 }}>
-            📊 资产周报
-          </Title>
-          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 16 }}>
-            {content.generated_at || dayjs().format('YYYY年MM月DD日')}
-          </Text>
+          {/* 装饰性背景圆形 */}
+          <div style={{
+            position: 'absolute',
+            right: -50,
+            top: -50,
+            width: 200,
+            height: 200,
+            borderRadius: '50%',
+            background: 'rgba(255, 255, 255, 0.1)',
+            filter: 'blur(40px)'
+          }} />
+          <div style={{
+            position: 'absolute',
+            right: 100,
+            bottom: -30,
+            width: 150,
+            height: 150,
+            borderRadius: '50%',
+            background: 'rgba(255, 255, 255, 0.08)',
+            filter: 'blur(30px)'
+          }} />
+          
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{
+                width: 4,
+                height: 40,
+                background: '#fff',
+                marginRight: 20,
+                borderRadius: 2
+              }} />
+              <div>
+                <Title level={1} style={{ 
+                  color: '#fff', 
+                  margin: 0, 
+                  fontSize: 36, 
+                  fontWeight: 800,
+                  letterSpacing: '1px'
+                }}>
+                  📊 {content.title || '资产智能周报'}
+                </Title>
+                <Text style={{ 
+                  color: 'rgba(255,255,255,0.85)', 
+                  fontSize: 15,
+                  display: 'block',
+                  marginTop: 8
+                }}>
+                  {content.period || content.generated_at || dayjs().format('YYYY年MM月DD日')}
+                </Text>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Markdown内容 */}
@@ -216,16 +264,43 @@ const ReportRenderer = ({ content }) => {
                 fontWeight: 700
               }} />
             ),
-            h2: ({node, ...props}) => (
-              <Title level={2} {...props} style={{ 
-                marginTop: 28, 
-                marginBottom: 14,
-                paddingLeft: 16,
-                borderLeft: '4px solid #667eea',
-                fontSize: 24,
-                fontWeight: 600
-              }} />
-            ),
+            h2: ({node, ...props}) => {
+              const text = props.children;
+              const emoji = text && typeof text[0] === 'string' ? text[0].match(/[\p{Emoji}]/u)?.[0] : '';
+              return (
+                <div style={{ 
+                  marginTop: 40,
+                  marginBottom: 24,
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '20px 24px',
+                    background: 'linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%)',
+                    borderRadius: '12px',
+                    borderLeft: '6px solid #667eea',
+                    boxShadow: '0 2px 12px rgba(102, 126, 234, 0.1)'
+                  }}>
+                    {emoji && (
+                      <span style={{ 
+                        fontSize: 32, 
+                        marginRight: 16,
+                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+                      }}>{emoji}</span>
+                    )}
+                    <Title level={2} {...props} style={{ 
+                      margin: 0,
+                      fontSize: 24,
+                      fontWeight: 700,
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }} />
+                  </div>
+                </div>
+              );
+            },
             h3: ({node, ...props}) => (
               <Title level={3} {...props} style={{ 
                 marginTop: 20, 
@@ -348,7 +423,12 @@ const ReportRenderer = ({ content }) => {
         {/* 图表区域 */}
         {chartData && (
           <>
-            <Divider style={{ margin: '32px 0' }}>📊 数据可视化</Divider>
+            <Divider style={{ 
+              margin: '48px 0 40px',
+              fontSize: 20,
+              fontWeight: 'bold',
+              color: '#667eea'
+            }}>📊 数据可视化</Divider>
             
             {/* 第一行: 资产配置 + 健康评分 */}
             <Row gutter={16}>

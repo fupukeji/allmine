@@ -262,7 +262,7 @@ const WorkflowVisualization = ({ reportId, refreshInterval = 3000 }) => {
                     执行时间: {formatTime(node.timestamp)}
                   </div>
                 )}
-                
+                  
                 {/* 显示节点额外信息 */}
                 {node.data_summary && (
                   <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
