@@ -3,7 +3,7 @@ import multiprocessing
 import os
 
 # 服务器绑定
-bind = "0.0.0.0:5000"
+bind = os.getenv("GUNICORN_BIND", "0.0.0.0:80")
 
 # Worker进程数
 workers = int(os.getenv("GUNICORN_WORKERS", multiprocessing.cpu_count() * 2 + 1))

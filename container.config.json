@@ -1,0 +1,22 @@
+{
+  "containerPort": 80,
+  "dockerfilePath": "backend/Dockerfile",
+  "buildDir": "backend",
+  "minNum": 0,
+  "maxNum": 10,
+  "cpu": 0.5,
+  "mem": 1,
+  "policyType": "cpu",
+  "policyThreshold": 60,
+  "envParams": {
+    "FLASK_ENV": "production",
+    "DB_TYPE": "mysql",
+    "DB_HOST": "127.0.0.1",
+    "DB_PORT": "3306",
+    "DB_NAME": "flask",
+    "DB_USER": "root",
+    "DB_PASSWORD": "QHhUJs6a"
+  },
+  "customLogs": "stdout",
+  "initialDelaySeconds": 30
+}

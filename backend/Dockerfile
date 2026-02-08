@@ -63,10 +63,10 @@ USER timevalue
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:5000/api/health', timeout=5)"
+    CMD python -c "import requests; requests.get('http://localhost:80/api/health', timeout=5)"
 
 # 暴露端口
-EXPOSE 5000
+EXPOSE 80
 
 # 使用entrypoint脚本
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

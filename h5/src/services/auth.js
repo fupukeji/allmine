@@ -14,6 +14,16 @@ export const login = (username, password) => {
 }
 
 /**
+ * 用户注册
+ * @param {string} username 用户名
+ * @param {string} email 邮箱
+ * @param {string} password 密码
+ */
+export const register = (username, email, password) => {
+  return request.post('/auth/register', { username, email, password })
+}
+
+/**
  * 微信登录
  * @param {string} code 微信授权码
  */
