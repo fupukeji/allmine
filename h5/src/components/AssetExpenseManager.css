@@ -1,0 +1,110 @@
+/* 费用管理样式 */
+.expense-manager {
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.expense-manager .adm-nav-bar {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  color: white;
+}
+
+.expense-manager .adm-nav-bar-title,
+.expense-manager .adm-nav-bar-back-arrow {
+  color: white;
+}
+
+/* 费用统计 */
+.expense-summary {
+  margin: 12px;
+  padding: 20px;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.expense-summary .asset-name {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.expense-summary .total-expense {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.expense-summary .total-expense .label {
+  font-size: 14px;
+}
+
+.expense-summary .total-expense .value {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* 费用列表 */
+.expense-list {
+  margin: 12px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.expense-list .adm-list-item-content-prefix {
+  padding-right: 8px;
+}
+
+.expense-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.expense-amount {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ff6b35;
+}
+
+.delete-btn {
+  font-size: 18px;
+  color: #999;
+  padding: 4px;
+}
+
+.delete-btn:active {
+  color: #ff4d4f;
+}
+
+.expense-info {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #999;
+}
+
+/* 添加表单 */
+.add-expense-form {
+  padding: 16px;
+}
+
+.add-expense-form .form-header {
+  text-align: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 16px;
+}
+
+.add-expense-form .form-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.add-expense-form .form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}

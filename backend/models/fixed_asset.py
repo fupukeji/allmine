@@ -28,9 +28,21 @@ class FixedAsset(db.Model):
     monthly_depreciation = db.Column(db.Numeric(12, 2))  # 月折旧额
     
     # 状态和位置信息
-    status = db.Column(db.String(20), default='in_use')  # 使用状态: in_use, idle, maintenance, disposed
+    status = db.Column(db.String(20), default='in_use')  # 使用状态: in_use, rent, sell, idle, maintenance, disposed
     location = db.Column(db.String(100))  # 所在位置
     responsible_person = db.Column(db.String(50))  # 责任人
+    
+    # 处置信息
+    rent_price = db.Column(db.Numeric(12, 2))  # 月租金
+    rent_deposit = db.Column(db.Numeric(12, 2))  # 押金
+    rent_start_date = db.Column(db.Date)  # 租期开始日期
+    rent_end_date = db.Column(db.Date)  # 租期结束日期
+    rent_due_day = db.Column(db.Integer, default=1)  # 收租日(每月几号)
+    tenant_name = db.Column(db.String(50))  # 租客姓名
+    tenant_phone = db.Column(db.String(20))  # 租客电话
+    sell_price = db.Column(db.Numeric(15, 2))  # 售出价格
+    dispose_date = db.Column(db.Date)  # 处置日期
+    dispose_note = db.Column(db.Text)  # 处置备注
     
     # 系统字段
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -64,6 +76,8 @@ class FixedAsset(db.Model):
         """获取状态文字"""
         status_map = {
             'in_use': '使用中',
+            'rent': '出租中',
+            'sell': '待出售',
             'idle': '闲置',
             'maintenance': '维修中',
             'disposed': '已处置'
@@ -155,6 +169,18 @@ class FixedAsset(db.Model):
             'status_text': self.get_status_text(),
             'location': self.location,
             'responsible_person': self.responsible_person,
+            
+            # 处置信息
+            'rent_price': float(self.rent_price) if self.rent_price else None,
+            'rent_deposit': float(self.rent_deposit) if self.rent_deposit else None,
+            'rent_start_date': self.rent_start_date.isoformat() if self.rent_start_date else None,
+            'rent_end_date': self.rent_end_date.isoformat() if self.rent_end_date else None,
+            'rent_due_day': self.rent_due_day or 1,
+            'tenant_name': self.tenant_name,
+            'tenant_phone': self.tenant_phone,
+            'sell_price': float(self.sell_price) if self.sell_price else None,
+            'dispose_date': self.dispose_date.isoformat() if self.dispose_date else None,
+            'dispose_note': self.dispose_note,
             
             # 系统信息
             'created_at': self.created_at.isoformat() if self.created_at else None,

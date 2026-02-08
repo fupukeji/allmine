@@ -1,0 +1,390 @@
+/* 虚拟资产页面样式 - 晶莹剔透现代风格 */
+.virtual-assets-page {
+  height: 100vh;
+  background: linear-gradient(180deg, #e8eeff 0%, #f5f7fa 50%, #faf5ff 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 页面头部 - 毛玻璃效果 */
+.virtual-assets-page .page-header {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 20px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 30px rgba(102, 126, 234, 0.3);
+}
+
+.virtual-assets-page .header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.virtual-assets-page .header-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.virtual-assets-page .header-text h1 {
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.virtual-assets-page .header-text p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+.virtual-assets-page .add-button-header {
+  border-radius: 20px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  color: white !important;
+  font-weight: 500;
+}
+
+.virtual-assets-page .add-button-header:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* 统计面板 - 玻璃质感 */
+.virtual-assets-page .stats-panel {
+  flex-shrink: 0;
+  margin: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.virtual-assets-page .stats-panel:active {
+  transform: scale(0.98);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+}
+
+.virtual-assets-page .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.virtual-assets-page .stat-item {
+  text-align: center;
+}
+
+.virtual-assets-page .stat-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.virtual-assets-page .stat-value.primary { color: #667eea; }
+.virtual-assets-page .stat-value.success { color: #52c41a; }
+.virtual-assets-page .stat-value.warning { color: #faad14; }
+.virtual-assets-page .stat-value.danger { color: #ff4d4f; }
+
+.virtual-assets-page .stat-label {
+  font-size: 11px;
+  color: #999;
+}
+
+.virtual-assets-page .stats-more {
+  text-align: center;
+  color: #667eea;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* 年份切换样式 */
+.virtual-assets-page .stats-year-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 0 12px;
+}
+
+.virtual-assets-page .year-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.virtual-assets-page .year-arrow {
+  font-size: 14px;
+  color: #ccc;
+}
+
+/* 主体内容区域 - 玻璃质感 */
+.virtual-assets-page .main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  margin: 0 12px 70px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.1);
+  min-height: 0;
+}
+
+/* 左侧分类栏 - 淡雅玻璃感 */
+.virtual-assets-page .category-sidebar {
+  width: 80px;
+  flex-shrink: 0;
+  background: rgba(250, 250, 255, 0.5);
+  border-radius: 16px 0 0 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.virtual-assets-page .category-sidebar .adm-side-bar {
+  --width: 80px;
+  --background-color: transparent;
+  --item-border-radius: 0;
+}
+
+.virtual-assets-page .category-sidebar .adm-side-bar-item {
+  padding: 12px 8px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+}
+
+.virtual-assets-page .category-sidebar .adm-side-bar-item-active {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+.virtual-assets-page .sidebar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+  width: 100%;
+}
+
+.virtual-assets-page .sidebar-icon {
+  font-size: 20px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.virtual-assets-page .sidebar-title {
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.virtual-assets-page .adm-side-bar-item-active .sidebar-title {
+  color: #667eea;
+  font-weight: bold;
+}
+
+.virtual-assets-page .sidebar-badge {
+  position: absolute;
+  top: -4px;
+  right: 0px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: #ff4d4f;
+  border-radius: 8px;
+  font-size: 10px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 右侧资产列表 - 独立滚动 */
+.virtual-assets-page .assets-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0;
+  min-height: 0;
+}
+
+.virtual-assets-page .asset-list .adm-list-item {
+  padding: 12px 16px 12px 12px;
+}
+
+.virtual-assets-page .asset-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.virtual-assets-page .asset-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.virtual-assets-page .asset-title .name {
+  font-weight: bold;
+  font-size: 15px;
+  color: #333;
+}
+
+.virtual-assets-page .asset-title .amount {
+  font-weight: bold;
+  font-size: 14px;
+  color: #667eea;
+}
+
+.virtual-assets-page .asset-desc {
+  margin-top: 4px;
+}
+
+.virtual-assets-page .asset-tags {
+  margin-bottom: 4px;
+}
+
+.virtual-assets-page .asset-days {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 6px;
+}
+
+.virtual-assets-page .asset-progress {
+  height: 4px;
+  background: rgba(102, 126, 234, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.virtual-assets-page .asset-progress .progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+  transition: width 0.3s;
+}
+
+/* 空状态 */
+.virtual-assets-page .assets-content .adm-empty {
+  padding: 40px 0;
+}
+
+/* 下拉刷新 */
+.virtual-assets-page .assets-content .adm-pull-to-refresh {
+  height: 100%;
+}
+
+/* 响应式调整 */
+@media (max-width: 375px) {
+  .virtual-assets-page .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  
+  .virtual-assets-page .stat-item:nth-child(4),
+  .virtual-assets-page .stat-item:nth-child(5) {
+    grid-column: span 1;
+  }
+  
+  .virtual-assets-page .category-sidebar {
+    width: 70px;
+  }
+  
+  .virtual-assets-page .category-sidebar .adm-side-bar {
+    --width: 70px;
+  }
+  
+  .virtual-assets-page .sidebar-title {
+    font-size: 10px;
+  }
+}
+
+/* 滑动按钮现代化样式 - 晶莹剔透效果 */
+.virtual-assets-page .adm-swipe-action-actions-right {
+  display: flex;
+  gap: 1px;
+}
+
+.virtual-assets-page .adm-swipe-action-action-button {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-weight: 500;
+  font-size: 14px;
+  min-width: 65px;
+  transition: all 0.2s ease;
+}
+
+/* 编辑按钮 - 蓝色纭瓃感 */
+.virtual-assets-page .adm-swipe-action-action-button[style*="primary"],
+.virtual-assets-page .adm-swipe-action-action-button:nth-child(1) {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%) !important;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* 删除按钮 - 红色纭瓃感 */
+.virtual-assets-page .adm-swipe-action-action-button[style*="danger"],
+.virtual-assets-page .adm-swipe-action-action-button:nth-child(2) {
+  background: linear-gradient(135deg, rgba(255, 107, 129, 0.9) 0%, rgba(255, 77, 79, 0.9) 100%) !important;
+  box-shadow: 0 4px 15px rgba(255, 77, 79, 0.4);
+}
+
+.virtual-assets-page .adm-swipe-action-action-button:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}

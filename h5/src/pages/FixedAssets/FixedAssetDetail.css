@@ -1,0 +1,516 @@
+/* 固定资产详情页样式 - 优化版 */
+.fixed-asset-detail-page {
+  background: #f5f7fa;
+  padding-bottom: 16px;
+}
+
+/* ========== 头部样式 ========== */
+.fixed-asset-detail-page .detail-header {
+  position: relative;
+  padding: 48px 16px 24px;
+  overflow: hidden;
+}
+
+.fixed-asset-detail-page .detail-header .header-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+  border-radius: 0 0 20px 20px;
+}
+
+/* 返回按钮 */
+.fixed-asset-detail-page .detail-header .back-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.fixed-asset-detail-page .detail-header .back-btn:active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.95);
+}
+
+.fixed-asset-detail-page .header-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* 资产图标 */
+.fixed-asset-detail-page .asset-icon {
+  width: 56px;
+  height: 56px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* 头部信息 */
+.fixed-asset-detail-page .header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.fixed-asset-detail-page .asset-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  line-height: 1.3;
+}
+
+.fixed-asset-detail-page .asset-code {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.fixed-asset-detail-page .status-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* 价值展示区 */
+.fixed-asset-detail-page .asset-values {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 120px;
+}
+
+.fixed-asset-detail-page .value-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.fixed-asset-detail-page .value-item .label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.fixed-asset-detail-page .value-item .value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  font-family: 'DIN Alternate', -apple-system, sans-serif;
+}
+
+.fixed-asset-detail-page .value-item .value.primary {
+  color: #fff700;
+}
+
+.fixed-asset-detail-page .value-divider {
+  display: none;
+}
+
+/* ========== 卡片通用样式 ========== */
+.fixed-asset-detail-page .depreciation-card,
+.fixed-asset-detail-page .analysis-card,
+.fixed-asset-detail-page .prediction-card,
+.fixed-asset-detail-page .info-card {
+  margin: 12px 12px 0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.fixed-asset-detail-page .card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* ========== 使用寿命卡片 ========== */
+.fixed-asset-detail-page .progress-bar-wrapper {
+  margin-bottom: 14px;
+}
+
+.fixed-asset-detail-page .progress-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #999;
+  font-family: 'DIN Alternate', -apple-system, sans-serif;
+}
+
+.fixed-asset-detail-page .time-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: #f8f9fc;
+  border-radius: 10px;
+  padding: 14px 8px;
+  gap: 8px;
+}
+
+.fixed-asset-detail-page .time-stat-item {
+  text-align: center;
+  position: relative;
+}
+
+/* 分隔线 */
+.fixed-asset-detail-page .time-stat-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 28px;
+  background: #e8e8e8;
+}
+
+.fixed-asset-detail-page .stat-number {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  font-family: 'DIN Alternate', -apple-system, sans-serif;
+  line-height: 1.2;
+}
+
+.fixed-asset-detail-page .stat-number.used {
+  color: #52c41a;
+}
+
+.fixed-asset-detail-page .stat-number.remaining {
+  color: #faad14;
+}
+
+.fixed-asset-detail-page .stat-label {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+}
+
+/* ========== 折旧分析卡片 ========== */
+.fixed-asset-detail-page .value-chart {
+  margin-bottom: 14px;
+}
+
+.fixed-asset-detail-page .chart-bar {
+  display: flex;
+  height: 28px;
+  border-radius: 6px;
+  overflow: hidden;
+  font-family: -apple-system, sans-serif;
+}
+
+.fixed-asset-detail-page .depreciated-portion {
+  background: linear-gradient(90deg, #ff6b6b 0%, #ff8787 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+  transition: width 0.3s ease;
+}
+
+.fixed-asset-detail-page .depreciated-portion span {
+  font-size: 10px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.fixed-asset-detail-page .remaining-portion {
+  background: linear-gradient(90deg, #52c41a 0%, #73d13d 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  transition: width 0.3s ease;
+}
+
+.fixed-asset-detail-page .remaining-portion span {
+  font-size: 10px;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* 数值列表 */
+.fixed-asset-detail-page .value-list {
+  --border-inner: none;
+  --padding-left: 0;
+  --padding-right: 0;
+}
+
+.fixed-asset-detail-page .value-list .adm-list-item {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.fixed-asset-detail-page .value-list .adm-list-item-content {
+  padding: 10px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.fixed-asset-detail-page .value-list .adm-list-item:last-child .adm-list-item-content {
+  border-bottom: none;
+}
+
+.fixed-asset-detail-page .value-list .adm-list-item-content-main {
+  font-size: 13px;
+  color: #666;
+}
+
+.fixed-asset-detail-page .value-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  font-family: 'DIN Alternate', -apple-system, sans-serif;
+}
+
+.fixed-asset-detail-page .value-text.depreciated {
+  color: #ff4d4f;
+}
+
+.fixed-asset-detail-page .value-text.remaining {
+  color: #52c41a;
+}
+
+/* ========== 资产评估卡片 ========== */
+.fixed-asset-detail-page .prediction-items {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+/* ========== 出租信息卡片 ========== */
+.fixed-asset-detail-page .rent-card {
+  margin: 12px 12px 0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-left: 3px solid #1890ff;
+}
+
+.fixed-asset-detail-page .rent-summary {
+  display: flex;
+  gap: 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.fixed-asset-detail-page .rent-amount,
+.fixed-asset-detail-page .rent-deposit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fixed-asset-detail-page .rent-summary .label {
+  font-size: 12px;
+  color: #666;
+}
+
+.fixed-asset-detail-page .rent-summary .value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1890ff;
+  font-family: 'DIN Alternate', -apple-system, sans-serif;
+}
+
+.fixed-asset-detail-page .rent-detail-list {
+  --border-inner: solid 1px #f5f5f5;
+  --border-top: none;
+  --border-bottom: none;
+}
+
+.fixed-asset-detail-page .rent-detail-list .adm-list-item-content {
+  padding: 10px 0;
+}
+
+.fixed-asset-detail-page .rent-detail-list .adm-list-item-content-main {
+  font-size: 13px;
+  color: #666;
+}
+
+.fixed-asset-detail-page .rent-detail-list .adm-list-item-content-extra {
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+}
+
+.fixed-asset-detail-page .prediction-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 10px;
+  background: #f8f9fc;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.fixed-asset-detail-page .prediction-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.fixed-asset-detail-page .prediction-icon.rate {
+  background: linear-gradient(135deg, #e6f7e6 0%, #d4f5d4 100%);
+}
+
+.fixed-asset-detail-page .prediction-icon.suggestion {
+  background: linear-gradient(135deg, #fff8e6 0%, #fff3d4 100%);
+}
+
+.fixed-asset-detail-page .prediction-content {
+  width: 100%;
+}
+
+.fixed-asset-detail-page .prediction-label {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.fixed-asset-detail-page .prediction-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  font-family: 'DIN Alternate', -apple-system, sans-serif;
+}
+
+.fixed-asset-detail-page .prediction-value.suggestion-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: #52c41a;
+  font-family: -apple-system, sans-serif;
+  line-height: 1.4;
+}
+
+.fixed-asset-detail-page .prediction-desc {
+  font-size: 10px;
+  color: #bbb;
+  margin-top: 2px;
+}
+
+/* ========== 资产详情卡片 ========== */
+.fixed-asset-detail-page .info-card .adm-list {
+  --border-inner: solid 1px #f5f5f5;
+  --border-top: none;
+  --border-bottom: none;
+}
+
+.fixed-asset-detail-page .info-card .adm-list-item-content {
+  padding: 10px 0;
+}
+
+.fixed-asset-detail-page .info-card .adm-list-item-content-main {
+  font-size: 13px;
+  color: #666;
+}
+
+.fixed-asset-detail-page .info-card .adm-list-item-content-extra {
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+  max-width: 60%;
+  text-align: right;
+}
+
+/* ========== 底部操作 ========== */
+.fixed-asset-detail-page + .bottom-actions,
+.bottom-actions {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  background: white;
+  box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.04);
+}
+
+.bottom-actions .adm-button {
+  height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+/* ========== 响应式适配 ========== */
+@media screen and (max-width: 340px) {
+  .fixed-asset-detail-page .header-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .fixed-asset-detail-page .header-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .fixed-asset-detail-page .asset-name {
+    justify-content: center;
+  }
+  
+  .fixed-asset-detail-page .asset-values {
+    flex-direction: row;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+  }
+  
+  .fixed-asset-detail-page .value-item {
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  
+  .fixed-asset-detail-page .value-item .label {
+    width: auto;
+  }
+  
+  .fixed-asset-detail-page .stat-number {
+    font-size: 14px;
+  }
+  
+  .fixed-asset-detail-page .prediction-items {
+    grid-template-columns: 1fr;
+  }
+}

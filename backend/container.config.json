@@ -1,0 +1,14 @@
+{
+  "containerPort": 5000,
+  "minNum": 0,
+  "maxNum": 5,
+  "cpu": 0.25,
+  "mem": 0.5,
+  "policyType": "cpu",
+  "policyThreshold": 60,
+  "envParams": {},
+  "customLogs": "/app/logs",
+  "initialDelaySeconds": 10,
+  "dataBaseName": "timevalue",
+  "executeSQLs": []
+}

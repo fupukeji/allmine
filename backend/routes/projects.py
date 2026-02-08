@@ -181,6 +181,8 @@ def create_project():
             start_time=start_time,
             end_time=end_time,
             purpose=data.get('purpose', '').strip()[:500],  # 限制500字符
+            account_username=data.get('account_username', '').strip()[:100] if data.get('account_username') else None,
+            account_password=data.get('account_password', '').strip()[:200] if data.get('account_password') else None,
             user_id=user_id,
             category_id=data['category_id']
         )
@@ -386,6 +388,13 @@ def update_project(project_id):
         # 更新购买目的
         if 'purpose' in data:
             project.purpose = data['purpose'].strip()[:500] if data['purpose'] else None
+        
+        # 更新账号信息
+        if 'account_username' in data:
+            project.account_username = data['account_username'].strip()[:100] if data['account_username'] else None
+        
+        if 'account_password' in data:
+            project.account_password = data['account_password'].strip()[:200] if data['account_password'] else None
         
         db.session.commit()
         

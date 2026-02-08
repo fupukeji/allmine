@@ -31,6 +31,12 @@ class User(db.Model):
     email_notifications = db.Column(db.Boolean, default=True)  # 邮件通知
     sms_notifications = db.Column(db.Boolean, default=False)  # 短信通知
     
+    # 微信相关字段
+    wechat_openid = db.Column(db.String(128), unique=True, index=True)  # 微信OpenID
+    wechat_unionid = db.Column(db.String(128), index=True)  # 微信UnionID（多公众号统一ID）
+    wechat_nickname = db.Column(db.String(100))  # 微信昵称
+    wechat_avatar = db.Column(db.String(500))  # 微信头像URL
+    
     # AI服务商API配置（加密存储）
     zhipu_api_key_encrypted = db.Column(db.Text)  # 智谱AI API Key
     zhipu_model = db.Column(db.String(50), default='glm-4-flash')  # 智谱AI模型

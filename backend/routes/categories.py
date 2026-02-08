@@ -19,21 +19,30 @@ def get_categories():
     try:
         user_id = int(get_jwt_identity())
         tree = request.args.get('tree', 'false').lower() == 'true'  # 是否返回树形结构
+        asset_type = request.args.get('asset_type')  # 资产类型筛选: virtual/fixed
+        
+        # 构建基础查询
+        query = Category.query.filter_by(user_id=user_id)
+        
+        # 尝试按asset_type筛选（如果字段存在）
+        if asset_type:
+            try:
+                query = query.filter(Category.asset_type == asset_type)
+            except Exception:
+                pass  # 字段不存在时忽略
         
         if tree:
             # 返回树形结构：只返回顶级分类，包含其子分类
-            categories = Category.query.filter_by(
-                user_id=user_id, 
-                parent_id=None
-            ).order_by(Category.sort_order, Category.name).all()
+            query = query.filter(Category.parent_id == None)
+            categories = query.order_by(Category.sort_order, Category.name).all()
             
             return jsonify({
                 'code': 200,
                 'data': [category.to_dict(include_children=True) for category in categories]
             })
         else:
-            # 返回平面列表
-            categories = Category.query.filter_by(user_id=user_id).order_by(Category.created_at.desc()).all()
+            # 返回平面列表，按sort_order排序
+            categories = query.order_by(Category.sort_order, Category.name).all()
             
             return jsonify({
                 'code': 200,
@@ -111,6 +120,7 @@ def create_category():
             icon=data.get('icon', 'folder'),
             description=data.get('description'),
             sort_order=data.get('sort_order', 0),
+            asset_type=data.get('asset_type', 'virtual'),  # 默认为虚拟资产
             parent_id=parent_id,
             user_id=user_id
         )
@@ -378,3 +388,47 @@ def get_leaf_categories():
         })
     except Exception as e:
         return jsonify({'code': 500, 'message': f'获取失败: {str(e)}'}), 500
+
+@categories_bp.route('/categories/reorder', methods=['POST'])
+@jwt_required()
+def reorder_categories():
+    """批量更新分类排序"""
+    try:
+        user_id = int(get_jwt_identity())
+        data = request.get_json()
+        
+        # data格式: { "orders": [{"id": 1, "sort_order": 0}, ...] }
+        orders = data.get('orders', [])
+        
+        if not orders:
+            return jsonify({
+                'code': 400,
+                'message': '排序数据不能为空'
+            }), 400
+        
+        # 批量更新
+        for item in orders:
+            category_id = item.get('id')
+            sort_order = item.get('sort_order', 0)
+            
+            category = Category.query.filter_by(
+                id=category_id,
+                user_id=user_id
+            ).first()
+            
+            if category:
+                category.sort_order = sort_order
+        
+        db.session.commit()
+        
+        return jsonify({
+            'code': 200,
+            'message': '排序更新成功'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'code': 500,
+            'message': f'更新排序失败：{str(e)}'
+        }), 500

@@ -1,5 +1,6 @@
 from database import db
 from datetime import datetime
+from utils.crypto import encrypt_credential, decrypt_credential
 
 class Project(db.Model):
     __tablename__ = 'projects'
@@ -11,6 +12,18 @@ class Project(db.Model):
     start_time = db.Column(db.DateTime, nullable=False)  # 开始计算时间
     end_time = db.Column(db.DateTime, nullable=False)  # 结束时间
     purpose = db.Column(db.Text)  # 购买目的（可选）
+    account_username = db.Column(db.String(100))  # 账号用户名（可选）
+    _account_password = db.Column('account_password', db.String(500))  # 账号密码（加密存储）
+    
+    @property
+    def account_password(self):
+        """解密获取密码"""
+        return decrypt_credential(self._account_password)
+    
+    @account_password.setter
+    def account_password(self, value):
+        """加密存储密码"""
+        self._account_password = encrypt_credential(value) if value else None
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -80,6 +93,8 @@ class Project(db.Model):
             'start_time': self.start_time.isoformat() if self.start_time else None,
             'end_time': self.end_time.isoformat() if self.end_time else None,
             'purpose': self.purpose,
+            'account_username': self.account_username,  # 账号用户名
+            'account_password': self.account_password,  # 账号密码（解密后返回）
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'category_id': self.category_id,

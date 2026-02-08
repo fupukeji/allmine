@@ -1,0 +1,52 @@
+name: Deploy to Tencent CloudBase
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'backend/**'
+      - '.github/workflows/**'
+
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Backend to CloudBase
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install CloudBase CLI
+        run: |
+          npm install -g @cloudbase/cli@latest
+      
+      - name: Deploy to CloudBase
+        env:
+          CLOUDBASE_SECRET_ID: ${{ secrets.CLOUDBASE_SECRET_ID }}
+          CLOUDBASE_SECRET_KEY: ${{ secrets.CLOUDBASE_SECRET_KEY }}
+        run: |
+          cd backend
+          echo "开始部署到微信云托管..."
+          cloudbase login --apiKeyId $CLOUDBASE_SECRET_ID --apiKey $CLOUDBASE_SECRET_KEY
+          cloudbase run deploy --envId prod-4gqjqr6g0c81bd5a
+      
+      - name: Notify deployment status
+        if: success()
+        run: |
+          echo "✅ 部署成功！"
+          echo "访问地址: https://flask-rvx7-224477-6-1403315737.sh.run.tcloudbase.com"
+      
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ 部署失败，请检查日志"

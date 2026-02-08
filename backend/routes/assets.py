@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import db
 from models.fixed_asset import FixedAsset
+from models.project import Project
 from models.category import Category
 from models.asset_income import AssetIncome
 from datetime import datetime, date, timedelta
@@ -9,6 +10,80 @@ from sqlalchemy import func, extract
 import uuid
 
 assets_bp = Blueprint('assets', __name__)
+
+@assets_bp.route('/assets/expiring', methods=['GET'])
+@jwt_required()
+def get_expiring_alerts():
+    """获取快到期提醒（30天内）"""
+    try:
+        current_user_id = get_jwt_identity()
+        today = datetime.now().date()
+        alert_date = today + timedelta(days=30)
+        
+        alerts = []
+        
+        # 1. 检查固定资产到期（购买日期 + 使用年限）
+        all_assets = FixedAsset.query.filter(
+            FixedAsset.user_id == current_user_id,
+            FixedAsset.purchase_date.isnot(None),
+            FixedAsset.useful_life_years.isnot(None)
+        ).all()
+        
+        for asset in all_assets:
+            # 计算到期日期 = 购买日期 + 使用年限
+            expiry_date = asset.purchase_date + timedelta(days=asset.useful_life_years * 365)
+            
+            # 判断是否在30天内到期
+            if today <= expiry_date <= alert_date:
+                days_left = (expiry_date - today).days
+                alerts.append({
+                    'id': asset.id,
+                    'type': 'fixed_asset',
+                    'name': asset.name,
+                    'expiry_date': expiry_date.isoformat(),
+                    'days_left': days_left,
+                    'category': asset.category.name if asset.category else '未分类',
+                    'purchase_price': float(asset.original_value) if asset.original_value else 0
+                })
+        
+        # 2. 检查虚拟资产（项目）到期
+        expiring_projects = Project.query.filter(
+            Project.user_id == current_user_id,
+            Project.end_time.isnot(None)
+        ).all()
+        
+        for project in expiring_projects:
+            project_end_date = project.end_time.date() if isinstance(project.end_time, datetime) else project.end_time
+            
+            # 判断是否在30天内到期
+            if today <= project_end_date <= alert_date:
+                days_left = (project_end_date - today).days
+                alerts.append({
+                    'id': project.id,
+                    'type': 'project',
+                    'name': project.name,
+                    'expiry_date': project_end_date.isoformat(),
+                    'days_left': days_left,
+                    'category': project.category.name if project.category else '未分类',
+                    'total_amount': float(project.total_amount) if project.total_amount else 0
+                })
+        
+        # 按剩余天数排序
+        alerts.sort(key=lambda x: x['days_left'])
+        
+        return jsonify({
+            'code': 200,
+            'data': alerts
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f'获取到期提醒失败: {str(e)}')
+        traceback.print_exc()
+        return jsonify({
+            'code': 500,
+            'message': f'获取失败: {str(e)}'
+        }), 500
 
 @assets_bp.route('/assets', methods=['GET'])
 @jwt_required()
@@ -228,7 +303,9 @@ def update_asset(asset_id):
         updatable_fields = [
             'asset_code', 'name', 'description', 'category_id',
             'original_value', 'residual_rate', 'useful_life_years',
-            'depreciation_method', 'status', 'location', 'responsible_person'
+            'depreciation_method', 'status', 'location', 'responsible_person',
+            'rent_price', 'rent_deposit', 'rent_due_day', 'tenant_name', 'tenant_phone',
+            'sell_price', 'dispose_note'
         ]
         
         for field in updatable_fields:
@@ -236,7 +313,7 @@ def update_asset(asset_id):
                 setattr(asset, field, data[field])
         
         # 处理日期字段
-        date_fields = ['purchase_date', 'depreciation_start_date']
+        date_fields = ['purchase_date', 'depreciation_start_date', 'dispose_date', 'rent_start_date', 'rent_end_date']
         for field in date_fields:
             if field in data and data[field]:
                 try:

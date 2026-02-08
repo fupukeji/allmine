@@ -1,0 +1,482 @@
+/* 固定资产页面样式 - 晶莹剔透现代风格 */
+.fixed-assets-page {
+  height: 100vh;
+  background: linear-gradient(180deg, #e6fff0 0%, #f5f7fa 50%, #f0fff4 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 页面头部 - 毛玻璃效果 */
+.fixed-assets-page .page-header {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(82, 196, 26, 0.95) 0%, rgba(56, 158, 13, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 20px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 30px rgba(82, 196, 26, 0.3);
+}
+
+.fixed-assets-page .header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fixed-assets-page .header-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.fixed-assets-page .header-text h1 {
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.fixed-assets-page .header-text p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+.fixed-assets-page .add-button-header {
+  border-radius: 20px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  color: white !important;
+  font-weight: 500;
+}
+
+.fixed-assets-page .add-button-header:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* 统计面板 - 玻璃质感 */
+.fixed-assets-page .stats-panel {
+  flex-shrink: 0;
+  margin: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px rgba(82, 196, 26, 0.15);
+}
+
+.fixed-assets-page .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.fixed-assets-page .stat-item {
+  text-align: center;
+}
+
+.fixed-assets-page .stat-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.fixed-assets-page .stat-value.primary { color: #52c41a; }
+.fixed-assets-page .stat-value.success { color: #52c41a; }
+.fixed-assets-page .stat-value.warning { color: #faad14; }
+.fixed-assets-page .stat-value.danger { color: #ff4d4f; }
+
+.fixed-assets-page .stat-label {
+  font-size: 11px;
+  color: #999;
+}
+
+/* 年份切换样式 */
+.fixed-assets-page .stats-year-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 0 12px;
+}
+
+.fixed-assets-page .year-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #52c41a;
+}
+
+.fixed-assets-page .year-arrow {
+  font-size: 14px;
+  color: #ccc;
+}
+
+/* 年度收入样式 */
+.fixed-assets-page .stats-income {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(82, 196, 26, 0.15);
+}
+
+.fixed-assets-page .income-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.fixed-assets-page .income-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ff6b35;
+}
+
+/* 主体内容区域 - 玻璃质感 */
+.fixed-assets-page .main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  margin: 0 12px 70px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px rgba(82, 196, 26, 0.1);
+  min-height: 0;
+}
+
+/* 左侧分类栏 - 淡雅玻璃感 */
+.fixed-assets-page .category-sidebar {
+  width: 80px;
+  flex-shrink: 0;
+  background: rgba(250, 255, 250, 0.5);
+  border-radius: 16px 0 0 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid rgba(82, 196, 26, 0.1);
+}
+
+.fixed-assets-page .category-sidebar .adm-side-bar {
+  --width: 80px;
+  --background-color: transparent;
+  --item-border-radius: 0;
+}
+
+.fixed-assets-page .category-sidebar .adm-side-bar-item {
+  padding: 12px 8px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+}
+
+.fixed-assets-page .category-sidebar .adm-side-bar-item-active {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.15);
+}
+
+.fixed-assets-page .sidebar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+  width: 100%;
+}
+
+.fixed-assets-page .sidebar-icon {
+  font-size: 20px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.fixed-assets-page .sidebar-title {
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.fixed-assets-page .adm-side-bar-item-active .sidebar-title {
+  color: #52c41a;
+  font-weight: bold;
+}
+
+.fixed-assets-page .sidebar-badge {
+  position: absolute;
+  top: -4px;
+  right: 0px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: #ff4d4f;
+  border-radius: 8px;
+  font-size: 10px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 右侧资产列表 - 独立滚动 */
+.fixed-assets-page .assets-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0;
+  min-height: 0; /* 关键：让flex子元素可以收缩 */
+}
+
+.fixed-assets-page .asset-list .adm-list-item {
+  padding: 12px 16px 12px 12px;
+}
+
+.fixed-assets-page .asset-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(82, 196, 26, 0.9) 0%, rgba(56, 158, 13, 0.9) 100%);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(82, 196, 26, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.fixed-assets-page .asset-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.fixed-assets-page .asset-title .name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #333;
+}
+
+.fixed-assets-page .asset-title .amount {
+  font-weight: 600;
+  font-size: 15px;
+  color: #52c41a;
+  font-family: 'DIN Alternate', -apple-system, sans-serif;
+}
+
+.fixed-assets-page .asset-desc {
+  margin-top: 6px;
+}
+
+.fixed-assets-page .asset-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.fixed-assets-page .asset-tags .adm-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.fixed-assets-page .asset-info-row {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+  background: #f8f9fa;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.fixed-assets-page .asset-info-row .label {
+  color: #999;
+  margin-right: 2px;
+}
+
+.fixed-assets-page .asset-info-row .value {
+  color: #333;
+  font-weight: 500;
+  font-family: 'DIN Alternate', -apple-system, sans-serif;
+}
+
+/* 折旧进度行 - 重新设计 */
+.fixed-assets-page .depreciation-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: linear-gradient(135deg, #f6ffed 0%, #f0fff4 100%);
+  border-radius: 8px;
+  border: 1px solid #b7eb8f;
+}
+
+.fixed-assets-page .depreciation-label {
+  font-size: 11px;
+  color: #52c41a;
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 70px;
+}
+
+.fixed-assets-page .depreciation-row .adm-progress-bar {
+  flex: 1;
+  --track-width: 6px;
+}
+
+.fixed-assets-page .asset-location {
+  font-size: 11px;
+  color: #999;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* 空状态 */
+.fixed-assets-page .assets-content .adm-empty {
+  padding: 40px 0;
+}
+
+/* 下拉刷新 */
+.fixed-assets-page .assets-content .adm-pull-to-refresh {
+  min-height: calc(100vh - 380px);
+}
+
+/* 响应式调整 */
+@media (max-width: 375px) {
+  .fixed-assets-page .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  
+  .fixed-assets-page .stat-item:nth-child(4),
+  .fixed-assets-page .stat-item:nth-child(5) {
+    grid-column: span 1;
+  }
+  
+  .fixed-assets-page .category-sidebar {
+    width: 70px;
+  }
+  
+  .fixed-assets-page .category-sidebar .adm-side-bar {
+    --width: 70px;
+  }
+  
+  .fixed-assets-page .sidebar-title {
+    font-size: 10px;
+  }
+}
+
+/* 处置弹窗样式 */
+.dispose-popup h3 {
+  color: #333;
+  font-size: 18px;
+}
+
+.dispose-popup .adm-form-item {
+  padding: 8px 0;
+}
+
+.dispose-popup .adm-form-item-label {
+  font-size: 14px;
+  color: #666;
+}
+
+/* 出租信息行样式 */
+.fixed-assets-page .rent-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.fixed-assets-page .rent-price {
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.fixed-assets-page .rent-due {
+  font-size: 11px;
+}
+
+/* 滑动按钮现代化样式 - 晶莹剔透效果 */
+.fixed-assets-page .adm-swipe-action-actions-right {
+  display: flex;
+  gap: 1px;
+}
+
+.fixed-assets-page .adm-swipe-action-action-button {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-weight: 500;
+  font-size: 13px;
+  min-width: 55px;
+  transition: all 0.2s ease;
+}
+
+/* 费用按钮 - 橙色纭瓃感 */
+.fixed-assets-page .adm-swipe-action-action-button:nth-child(1) {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.9) 0%, rgba(247, 147, 30, 0.9) 100%) !important;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+}
+
+/* 处置按钮 - 金色纭瓃感 */
+.fixed-assets-page .adm-swipe-action-action-button:nth-child(2) {
+  background: linear-gradient(135deg, rgba(250, 173, 20, 0.9) 0%, rgba(212, 136, 6, 0.9) 100%) !important;
+  box-shadow: 0 4px 15px rgba(250, 173, 20, 0.4);
+}
+
+/* 编辑按钮 - 蓝色纭瓃感 */
+.fixed-assets-page .adm-swipe-action-action-button:nth-child(3) {
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.9) 0%, rgba(47, 84, 235, 0.9) 100%) !important;
+  box-shadow: 0 4px 15px rgba(24, 144, 255, 0.4);
+}
+
+/* 删除按钮 - 红色纭瓃感 */
+.fixed-assets-page .adm-swipe-action-action-button:nth-child(4) {
+  background: linear-gradient(135deg, rgba(255, 107, 129, 0.9) 0%, rgba(255, 77, 79, 0.9) 100%) !important;
+  box-shadow: 0 4px 15px rgba(255, 77, 79, 0.4);
+}
+
+.fixed-assets-page .adm-swipe-action-action-button:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}

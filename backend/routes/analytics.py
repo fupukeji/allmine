@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.user import User
 from models.project import Project
+from models.fixed_asset import FixedAsset
 from models.category import Category
 from database import db
 from sqlalchemy import func, extract, and_, or_
@@ -15,6 +16,42 @@ def get_current_user():
     """获取当前用户"""
     user_id = int(get_jwt_identity())
     return User.query.get(user_id)
+
+@analytics_bp.route('/analytics/dashboard', methods=['GET'])
+@jwt_required()
+def get_dashboard():
+    """获取首页Dashboard统计数据"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'code': 404, 'message': '用户不存在'}), 404
+
+        # 统计虚拟资产（项目）
+        projects = Project.query.filter_by(user_id=user.id).all()
+        project_count = len(projects)
+        virtual_asset_value = sum(float(p.total_amount) for p in projects)
+        
+        # 统计固定资产
+        assets = FixedAsset.query.filter_by(user_id=user.id).all()
+        asset_count = len(assets)
+        fixed_asset_value = sum(float(a.original_value) for a in assets if a.original_value)
+        
+        # 总资产价值
+        total_value = virtual_asset_value + fixed_asset_value
+
+        return jsonify({
+            'code': 200,
+            'data': {
+                'total_value': round(total_value, 2),
+                'virtual_asset_value': round(virtual_asset_value, 2),
+                'fixed_asset_value': round(fixed_asset_value, 2),
+                'project_count': project_count,
+                'asset_count': asset_count
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'code': 500, 'message': f'获取Dashboard数据失败：{str(e)}'}), 500
 
 @analytics_bp.route('/analytics/overview', methods=['GET'])
 @jwt_required()

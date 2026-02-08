@@ -1,0 +1,32 @@
+{
+  "envId": "prod-4gqjqr6g0c81bd5a",
+  "version": "2.0",
+  "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
+  "functionRoot": "./",
+  "functions": [],
+  "framework": {
+    "name": "timevalue-backend",
+    "plugins": {
+      "container": {
+        "use": "@cloudbase/framework-plugin-container",
+        "inputs": {
+          "serviceName": "flask-rvx7",
+          "servicePath": "/",
+          "dockerfilePath": "./Dockerfile",
+          "buildDir": "./",
+          "containerPort": 5000,
+          "envVariables": {},
+          "uploadType": "image",
+          "cpu": 0.25,
+          "mem": 0.5,
+          "minNum": 0,
+          "maxNum": 5,
+          "policyType": "cpu",
+          "policyThreshold": 60,
+          "customLogs": "/app/logs",
+          "initialDelaySeconds": 10
+        }
+      }
+    }
+  }
+}

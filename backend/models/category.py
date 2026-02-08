@@ -10,6 +10,7 @@ class Category(db.Model):
     icon = db.Column(db.String(50), default='folder')  # 默认文件夹图标
     description = db.Column(db.String(200))  # 分类描述
     sort_order = db.Column(db.Integer, default=0)  # 排序顺序
+    asset_type = db.Column(db.String(20), default='virtual')  # 资产类型: virtual(虚拟资产), fixed(固定资产)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -38,6 +39,7 @@ class Category(db.Model):
             'icon': self.icon,
             'description': self.description,
             'sort_order': self.sort_order,
+            'asset_type': getattr(self, 'asset_type', 'virtual'),  # 兼容旧数据
             'parent_id': self.parent_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,

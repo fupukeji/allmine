@@ -1,0 +1,458 @@
+/* 详情页样式 - 现代简约风格 */
+.asset-detail-page {
+  background: #f8f9fc;
+  padding-bottom: 16px;
+}
+
+/* 头部样式 */
+.detail-header {
+  position: relative;
+  padding: 50px 20px 35px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.detail-header .header-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0 0 24px 24px;
+}
+
+/* 返回按钮 */
+.detail-header .back-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.detail-header .back-btn:active {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(0.95);
+}
+
+/* 左滑返回提示 */
+.asset-detail-page::before {
+  content: '';
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60px;
+  background: linear-gradient(180deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+  border-radius: 0 4px 4px 0;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.detail-header .header-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  margin-top: 50px;
+}
+
+.detail-header .asset-icon {
+  width: 56px;
+  height: 56px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.detail-header .header-info {
+  flex: 1;
+  text-align: left;
+  margin-left: 16px;
+}
+
+.detail-header .asset-name {
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-header .status-tag {
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  color: white;
+  display: inline-block;
+  font-weight: normal;
+}
+
+.detail-header .asset-amount {
+  color: white;
+  text-align: right;
+}
+
+.detail-header .asset-amount .currency {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.detail-header .asset-amount .value {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* 卡片通用样式 */
+.asset-detail-page .adm-card {
+  margin: 12px 16px;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.asset-detail-page .adm-card:first-of-type {
+  margin-top: -18px;
+  position: relative;
+  z-index: 2;
+}
+
+.asset-detail-page .adm-card-body {
+  padding: 16px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 14px;
+}
+
+.card-title .antd-mobile-icon {
+  font-size: 16px;
+}
+
+/* 进度卡片 */
+.progress-card .progress-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 14px;
+}
+
+.progress-bar-wrapper {
+  margin-bottom: 20px;
+}
+
+.progress-bar-wrapper .adm-progress-bar {
+  --track-width: 6px;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.time-stats {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.time-stat-item {
+  text-align: center;
+  flex: 1;
+}
+
+.time-stat-item .stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  line-height: 1.2;
+}
+
+.time-stat-item .stat-number.used {
+  color: #faad14;
+}
+
+.time-stat-item .stat-number.remaining {
+  color: #52c41a;
+}
+
+.time-stat-item .stat-label {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+/* 价值分析卡片 */
+.analysis-card .value-chart {
+  margin-bottom: 14px;
+}
+
+.analysis-card .chart-bar {
+  display: flex;
+  height: 32px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.analysis-card .used-portion {
+  background: linear-gradient(90deg, #ff6b6b 0%, #ffa8a8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 50px;
+  transition: width 0.3s ease;
+}
+
+.analysis-card .remaining-portion {
+  background: linear-gradient(90deg, #51cf66 0%, #8ce99a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 50px;
+  transition: width 0.3s ease;
+}
+
+.value-list {
+  --border-inner: none;
+}
+
+.value-list .adm-list-item {
+  padding: 10px 0;
+}
+
+.value-list .adm-list-item-content-main {
+  font-size: 14px;
+  color: #666;
+}
+
+.value-list .value-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.value-list .value-text.used {
+  color: #ff6b6b;
+}
+
+.value-list .value-text.remaining {
+  color: #51cf66;
+}
+
+/* 预测卡片 */
+.prediction-card .prediction-items {
+  padding: 0;
+}
+
+.prediction-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.prediction-item:not(:last-child) {
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.prediction-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.prediction-icon.annual {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.prediction-icon.efficiency {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.prediction-icon.suggestion {
+  background: linear-gradient(135deg, #ffd93d 0%, #ff9a3d 100%);
+}
+
+.prediction-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.prediction-label {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 2px;
+}
+
+.prediction-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.prediction-value .efficiency-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: #f0f7ff;
+  color: #667eea;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.prediction-value.suggestion-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: #52c41a;
+  line-height: 1.4;
+}
+
+.prediction-desc {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+}
+
+/* 信息卡片 */
+.info-card .adm-list {
+  --border-inner: none;
+}
+
+.info-card .adm-list-item {
+  padding: 12px 0;
+}
+
+.info-card .adm-list-item-content-main {
+  font-size: 14px;
+  color: #666;
+}
+
+.info-card .adm-list-item-content-extra {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+/* 底部操作 */
+.bottom-actions {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  background: white;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.bottom-actions .adm-button {
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+/* 分割线 */
+.asset-detail-page .adm-divider {
+  margin: 8px 0;
+}
+
+/* 账号信息卡片 */
+.account-card {
+  margin: 12px 12px 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #f8f9fc 100%);
+  border: 1px solid #e8ecf1;
+}
+
+.account-card .card-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.account-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #667eea;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.account-value .copy-hint {
+  font-size: 11px;
+  color: #999;
+  font-weight: normal;
+  padding: 2px 6px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.password-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-eye {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  color: #999;
+  cursor: pointer;
+}
+
+.toggle-eye:active {
+  color: #667eea;
+}

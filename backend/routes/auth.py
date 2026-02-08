@@ -150,7 +150,8 @@ def login():
             'message': '登录成功',
             'data': {
                 'user': user.to_dict(),
-                'access_token': access_token
+                'token': access_token,
+                'access_token': access_token  # 兼容字段
             }
         })
         
@@ -163,6 +164,7 @@ def login():
         }), 500
 
 @auth_bp.route('/profile', methods=['GET'])
+@auth_bp.route('/user', methods=['GET'])  # 别名，兼容H5
 @jwt_required()
 def get_profile():
     """获取用户信息"""

@@ -1,0 +1,258 @@
+/* 年度统计详情样式 */
+.year-stats-detail {
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.year-stats-detail .adm-nav-bar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.year-stats-detail .adm-nav-bar-title {
+  color: white;
+}
+
+.year-stats-detail .adm-nav-bar-back-arrow {
+  color: white;
+}
+
+/* 总览卡片 */
+.year-stats-detail .summary-card {
+  margin: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.year-stats-detail .summary-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.year-stats-detail .summary-item {
+  text-align: center;
+  padding: 12px 0;
+}
+
+.year-stats-detail .summary-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.year-stats-detail .summary-value.primary {
+  color: #667eea;
+}
+
+.year-stats-detail .summary-value.warning {
+  color: #faad14;
+}
+
+.year-stats-detail .summary-value.danger {
+  color: #ff4d4f;
+}
+
+.year-stats-detail .summary-label {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 图表区域 */
+.year-stats-detail .chart-section {
+  margin: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.year-stats-detail .chart-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+/* CSS柱状图 */
+.year-stats-detail .bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 180px;
+  padding: 20px 0 0;
+}
+
+.year-stats-detail .bar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.year-stats-detail .bar-value {
+  font-size: 9px;
+  color: #667eea;
+  font-weight: 500;
+  height: 20px;
+  white-space: nowrap;
+}
+
+.year-stats-detail .bar-wrapper {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 2px;
+}
+
+.year-stats-detail .bar {
+  width: 100%;
+  max-width: 20px;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px 4px 0 0;
+  min-height: 2px;
+  transition: height 0.3s ease;
+}
+
+.year-stats-detail .bar-label {
+  font-size: 10px;
+  color: #999;
+  margin-top: 8px;
+  height: 16px;
+}
+
+/* CSS分类占比图 */
+.year-stats-detail .pie-chart-css {
+  padding: 8px 0;
+}
+
+.year-stats-detail .pie-item {
+  margin-bottom: 12px;
+}
+
+.year-stats-detail .pie-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.year-stats-detail .pie-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.year-stats-detail .pie-name {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+}
+
+.year-stats-detail .pie-percent {
+  font-size: 14px;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.year-stats-detail .pie-bar-bg {
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.year-stats-detail .pie-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* 分类明细列表 */
+.year-stats-detail .category-list {
+  margin: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+}
+
+.year-stats-detail .category-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.year-stats-detail .category-item:last-child {
+  border-bottom: none;
+}
+
+.year-stats-detail .category-rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+.year-stats-detail .category-item:nth-child(2) .category-rank {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+}
+
+.year-stats-detail .category-item:nth-child(3) .category-rank {
+  background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
+}
+
+.year-stats-detail .category-item:nth-child(n+4) .category-rank {
+  background: #ccc;
+}
+
+.year-stats-detail .category-name {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+}
+
+.year-stats-detail .category-percent {
+  font-size: 14px;
+  color: #999;
+  margin-right: 12px;
+}
+
+.year-stats-detail .category-value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #667eea;
+}
+
+/* 固定资产版本样式覆盖 */
+.year-stats-detail.fixed-type .adm-nav-bar {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+}
+
+.year-stats-detail.fixed-type .summary-value.primary {
+  color: #52c41a;
+}
+
+.year-stats-detail.fixed-type .category-rank {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+}
+
+.year-stats-detail.fixed-type .category-value {
+  color: #52c41a;
+}

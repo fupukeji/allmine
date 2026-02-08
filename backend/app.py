@@ -41,6 +41,8 @@ def create_app():
     from models.asset_maintenance import AssetMaintenance, MaintenanceReminder
     from models.nginx_config import NginxConfig
     from models.ai_report import AIReport
+    from models.asset_expense import AssetExpense
+    from models.notification_settings import UserNotificationSettings
     
     # 注册蓝图
     from routes.auth import auth_bp
@@ -54,6 +56,10 @@ def create_app():
     from routes.nginx import nginx_bp
     from routes.reports import reports_bp
     from routes.health import health_bp  # 健康检查
+    from routes.wechat import wechat_bp  # 微信相关
+    from routes.expenses import expenses_bp  # 资产费用
+    from routes.notifications import notifications_bp  # 通知设置
+    from routes.preferences import preferences_bp  # 偏好设置
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(categories_bp, url_prefix='/api')
@@ -66,6 +72,10 @@ def create_app():
     app.register_blueprint(nginx_bp, url_prefix='/api')
     app.register_blueprint(reports_bp, url_prefix='/api')
     app.register_blueprint(health_bp, url_prefix='/api')  # 健康检查
+    app.register_blueprint(wechat_bp, url_prefix='/api')  # 微信相关
+    app.register_blueprint(expenses_bp, url_prefix='/api')  # 资产费用
+    app.register_blueprint(notifications_bp, url_prefix='/api')  # 通知设置
+    app.register_blueprint(preferences_bp, url_prefix='/api')  # 偏好设置
     
     # 创建数据表
     with app.app_context():
