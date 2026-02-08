@@ -1,0 +1,14 @@
+{
+  "containerPort": 80,
+  "minNum": 0,
+  "maxNum": 3,
+  "cpu": 0.25,
+  "mem": 0.5,
+  "policyType": "cpu",
+  "policyThreshold": 60,
+  "envParams": {},
+  "customLogs": "",
+  "initialDelaySeconds": 5,
+  "dataBaseName": "",
+  "executeSQLs": []
+}
