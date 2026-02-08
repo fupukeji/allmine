@@ -66,6 +66,28 @@ def readiness_check():
             'error': str(e)
         }), 503
 
+@health_bp.route('/health/debug', methods=['GET'])
+def health_debug():
+    """临时调试端点 - 查看数据库连接信息"""
+    info = {}
+    try:
+        result = db.session.execute(db.text('SELECT DATABASE()'))
+        info['current_database'] = result.scalar()
+        
+        result = db.session.execute(db.text('SELECT COUNT(*) FROM users'))
+        info['user_count'] = result.scalar()
+        
+        result = db.session.execute(db.text('SELECT id, username, email, role FROM users'))
+        info['users'] = [{'id': r[0], 'username': r[1], 'email': r[2], 'role': r[3]} for r in result]
+        
+        info['env_db_host'] = os.getenv('DB_HOST', 'NOT SET')
+        info['env_db_name'] = os.getenv('DB_NAME', 'NOT SET')
+        info['env_mysql_address'] = os.getenv('MYSQL_ADDRESS', 'NOT SET')
+    except Exception as e:
+        info['error'] = str(e)
+    
+    return jsonify(info), 200
+
 @health_bp.route('/live', methods=['GET'])
 def liveness_check():
     """
