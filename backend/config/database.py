@@ -52,19 +52,32 @@ class DatabaseConfig:
     def get_database_uri_from_env():
         """
         从环境变量读取数据库配置
-        
-        Returns:
-            数据库连接URI
+        支持两套环境变量格式：
+        - DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD (自定义)
+        - MYSQL_ADDRESS/MYSQL_USERNAME/MYSQL_PASSWORD (微信云托管默认)
         """
-        db_type = os.getenv('DB_TYPE', 'sqlite').lower()
+        db_type = os.getenv('DB_TYPE', 'mysql').lower()
         
         if db_type == 'mysql':
+            # 优先使用 DB_* 变量
+            host = os.getenv('DB_HOST')
+            port = os.getenv('DB_PORT')
+            
+            # 如果没有 DB_HOST，尝试从 MYSQL_ADDRESS 解析
+            if not host:
+                mysql_addr = os.getenv('MYSQL_ADDRESS', 'localhost:3306')
+                if ':' in mysql_addr:
+                    host, port = mysql_addr.rsplit(':', 1)
+                else:
+                    host = mysql_addr
+                    port = port or '3306'
+            
             return DatabaseConfig.get_mysql_uri(
-                host=os.getenv('DB_HOST', 'localhost'),
-                port=int(os.getenv('DB_PORT', 3306)),
-                database=os.getenv('DB_NAME', 'timevalue'),
-                username=os.getenv('DB_USER', 'root'),
-                password=os.getenv('DB_PASSWORD', '')
+                host=host or 'localhost',
+                port=int(port or 3306),
+                database=os.getenv('DB_NAME', 'allmine'),
+                username=os.getenv('DB_USER') or os.getenv('MYSQL_USERNAME', 'root'),
+                password=os.getenv('DB_PASSWORD') or os.getenv('MYSQL_PASSWORD', '')
             )
         else:
             return DatabaseConfig.get_sqlite_uri()
