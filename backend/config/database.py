@@ -99,15 +99,23 @@ class DatabaseSettings:
     @staticmethod
     def get_engine_options():
         """获取数据库引擎配置选项"""
-        return {
+        db_type = os.getenv('DB_TYPE', 'mysql').lower()
+        
+        options = {
             'pool_size': DatabaseSettings.POOL_SIZE,
             'pool_recycle': DatabaseSettings.POOL_RECYCLE,
             'pool_pre_ping': DatabaseSettings.POOL_PRE_PING,
             'pool_timeout': DatabaseSettings.POOL_TIMEOUT,
             'max_overflow': DatabaseSettings.MAX_OVERFLOW,
-            'connect_args': {
+            'echo': DatabaseSettings.ECHO
+        }
+        
+        # MySQL特定的连接参数
+        if db_type == 'mysql':
+            options['connect_args'] = {
                 'connect_timeout': 10,
                 'read_timeout': 30,
                 'write_timeout': 30
             }
-        }
+        
+        return options
