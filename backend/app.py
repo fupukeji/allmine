@@ -31,7 +31,7 @@ def create_app():
     jwt.init_app(app)
     
     # CORS配置 - 允许所有来源访问
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={r"/api/.*": {"origins": "*"}})
     
     # 在初始化扩展后立即导入所有模型
     from models.user import User
