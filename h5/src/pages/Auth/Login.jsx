@@ -33,8 +33,10 @@ export default function Login() {
         
         Toast.show({ icon: 'success', content: '登录成功' })
         
-        // 跳转到首页
-        navigate('/', { replace: true })
+        // 刷新页面以更新App组件状态
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 500)
       } else {
         Toast.show({ icon: 'fail', content: res.message || '登录失败' })
       }

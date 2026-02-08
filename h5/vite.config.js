@@ -48,7 +48,8 @@ export default defineConfig({
       '/api': {
         target: 'https://flask-76t7-224648-6-1403315737.sh.run.tcloudbase.com',
         changeOrigin: true,
-        secure: true
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api')
       }
     }
   },
