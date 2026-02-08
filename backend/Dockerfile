@@ -22,6 +22,7 @@ RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debia
     gcc \
     default-libmysqlclient-dev \
     pkg-config \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # ================================
@@ -41,28 +42,23 @@ RUN pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ -
 # ================================
 FROM base as production
 
-# 创建非root用户
-RUN useradd -m -u 1000 timevalue && \
-    mkdir -p /app/logs && \
-    chown -R timevalue:timevalue /app
+# 创建app目录
+RUN mkdir -p /app/logs
 
 # 从依赖阶段复制已安装的包
 COPY --from=dependencies /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=dependencies /usr/local/bin /usr/local/bin
 
 # 复制应用代码
-COPY --chown=timevalue:timevalue . .
+COPY . .
 
 # 复制并设置启动脚本权限
-COPY --chown=timevalue:timevalue docker-entrypoint.sh /usr/local/bin/
+COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# 切换到非root用户
-USER timevalue
-
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:80/api/health', timeout=5)"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:80/api/health || exit 1
 
 # 暴露端口
 EXPOSE 80

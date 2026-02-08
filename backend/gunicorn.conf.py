@@ -43,9 +43,9 @@ daemon = False
 # PID文件
 pidfile = "/tmp/gunicorn.pid"
 
-# 用户和组
-user = "timevalue"
-group = "timevalue"
+# 用户和组（云托管使用root）
+# user = "timevalue"
+# group = "timevalue"
 
 # 临时文件目录
 tmp_upload_dir = "/tmp"
