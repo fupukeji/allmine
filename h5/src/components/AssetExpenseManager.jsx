@@ -207,7 +207,7 @@ const AssetExpenseManager = ({ visible, onClose, asset }) => {
                 trigger="onConfirm"
                 onClick={(e, pickerRef) => pickerRef.current?.open()}
               >
-                <Picker columns={[expenseTypes.map(t => ({ value: t.value, label: t.label }))]}>
+                <Picker columns={[expenseTypes]}>
                   {(value) => value?.[0] ? getExpenseTypeLabel(value[0]) : '请选择'}
                 </Picker>
               </Form.Item>
